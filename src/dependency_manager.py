@@ -371,42 +371,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="WRFrontiers-Exporter Dependency Manager")
-    parser.add_argument("--url", help="Direct download URL for a dependency")
-    parser.add_argument("--output", help="Output path to extract dependency to")
-    parser.add_argument("--executable", help="Name of main executable to verify after extraction")
-    parser.add_argument("--batch-export-only", action="store_true", help="Install only BatchExport dependency")
-    parser.add_argument("--depot-downloader-only", action="store_true", help="Install only DepotDownloader dependency")
-    
-    args = parser.parse_args()
-    
-    # If specific URL provided, use direct download
-    if args.url and args.output:
-        dm = DependencyManager()
-        try:
-            success = dm.download_and_extract(
-                download_url=args.url,
-                output_path=args.output,
-                executable_name=args.executable
-            )
-            if success:
-                logger.success("Dependency installed successfully!")
-            else:
-                logger.error("Failed to install dependency")
-        finally:
-            dm.cleanup_temp_files()
-    
-    # Install specific dependencies
-    elif args.batch_export_only:
-        logger.info("Installing BatchExport only...")
-        install_batch_export(args.output)
-    
-    elif args.depot_downloader_only:
-        logger.info("Installing DepotDownloader only...")
-        install_depot_downloader(args.output)
-    
-    # Default: install all dependencies
-    else:
-        main()
+    main()
