@@ -31,7 +31,7 @@ class DepotDownloader:
         # no input manifest id downloads the latest version
         if manifest_id is None:
             manifest_id = self._get_latest_manifest_id()
-            print(f"DepotDownloader retrieved latest manifest id of: {manifest_id}")
+            logger.debug(f"DepotDownloader retrieved latest manifest id of: {manifest_id}")
 
         # Check if the manifest is already downloaded
         downloaded_manifest_id = self._read_downloaded_manifest_id()
@@ -99,6 +99,6 @@ class DepotDownloader:
         return manifest_id
 
     def _write_downloaded_manifest_id(self, manifest_id):
-        print('Writing manifest id', manifest_id, 'to', self.manifest_path)
+        logger.debug('Writing manifest id', manifest_id, 'to', self.manifest_path)
         with open(self.manifest_path, 'w') as f:
             f.write(manifest_id)
