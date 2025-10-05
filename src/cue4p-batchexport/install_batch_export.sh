@@ -28,8 +28,8 @@ fi
 
 # Fallback if API call failed
 if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-    echo "Warning: Failed to get latest version from API. Using v1.0.0"
-    VERSION="v1.0.0"
+    echo "Failed to get latest version from API."
+    exit 0
 fi
 
 echo "Detected version: $VERSION"
