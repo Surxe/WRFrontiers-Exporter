@@ -326,7 +326,7 @@ def install_batch_export(output_path=None):
 
 def install_depot_downloader(output_path=None):
     """
-    Install DepotDownloader dependency.
+    Install DepotDownloader dependency from the latest GitHub release.
     
     Args:
         output_path (str, optional): Path to install to. Defaults to src/steam/DepotDownloader/
@@ -337,8 +337,10 @@ def install_depot_downloader(output_path=None):
     
     dm = DependencyManager()
     try:
-        return dm.download_and_extract(
-            download_url="https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip",
+        return dm.download_github_release_latest(
+            repo_owner="SteamRE",
+            repo_name="DepotDownloader",
+            asset_pattern="windows-x64.zip",
             output_path=output_path,
             executable_name="DepotDownloader.exe"
         )
