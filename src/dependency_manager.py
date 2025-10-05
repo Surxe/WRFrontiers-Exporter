@@ -27,7 +27,41 @@ class DependencyManager:
         self.temp_dir = Path.cwd() / ".temp_downloads"
         self.temp_dir.mkdir(exist_ok=True)
     
-    def download_and_extract(self, download_url, output_path, executable_name=None, create_output_dir=True):
+    def _get_installed_version(self, output_path):
+        """
+        Get the currently installed version from version.txt file.
+        
+        Args:
+            output_path (Path): Directory where dependency is installed
+            
+        Returns:
+            str or None: Version string if found, None if file doesn't exist
+        """
+        version_file = Path(output_path) / "version.txt"
+        if version_file.exists():
+            try:
+                return version_file.read_text().strip()
+            except Exception as e:
+                logger.warning(f"Could not read version file {version_file}: {e}")
+                return None
+        return None
+    
+    def _write_version_file(self, output_path, version):
+        """
+        Write the version to version.txt file in the output directory.
+        
+        Args:
+            output_path (Path): Directory where dependency is installed
+            version (str): Version string to write
+        """
+        try:
+            version_file = Path(output_path) / "version.txt"
+            version_file.write_text(version)
+            logger.debug(f"Wrote version {version} to {version_file}")
+        except Exception as e:
+            logger.warning(f"Could not write version file: {e}")
+    
+    def download_and_extract(self, download_url, output_path, executable_name=None, create_output_dir=True, version=None):
         """
         Download a ZIP file from a URL and extract it to the specified path.
         
@@ -36,6 +70,7 @@ class DependencyManager:
             output_path (str or Path): Directory to extract the contents to
             executable_name (str, optional): Name of main executable to verify after extraction
             create_output_dir (bool): Whether to create the output directory if it doesn't exist
+            version (str, optional): Version string to write to version.txt file
             
         Returns:
             bool: True if successful, False otherwise
@@ -54,8 +89,19 @@ class DependencyManager:
                 output_path.mkdir(parents=True, exist_ok=True)
                 logger.info(f"Created output directory: {output_path}")
             
-            # Check if executable already exists
-            if executable_name and (output_path / executable_name).exists():
+            # Check if we should skip installation based on version
+            if version:
+                installed_version = self._get_installed_version(output_path)
+                if installed_version == version:
+                    logger.info(f"Version {version} already installed, skipping download")
+                    return True
+                elif installed_version:
+                    logger.info(f"Updating from version {installed_version} to {version}")
+                else:
+                    logger.info(f"Installing version {version} (no previous version found)")
+            
+            # Check if executable already exists (fallback if no version provided)
+            elif executable_name and (output_path / executable_name).exists():
                 logger.info(f"Executable {executable_name} already exists at: {output_path / executable_name}")
                 logger.info("To reinstall, delete the executable and run this again.")
                 return True
@@ -80,6 +126,10 @@ class DependencyManager:
             # Verify extraction
             if executable_name:
                 self._verify_executable(output_path, executable_name)
+            
+            # Write version file if version provided
+            if version:
+                self._write_version_file(output_path, version)
             
             # Cleanup
             zip_path.unlink()
@@ -144,7 +194,7 @@ class DependencyManager:
             download_url = matching_asset['browser_download_url']
             logger.info(f"Found matching asset: {matching_asset['name']}")
             
-            return self.download_and_extract(download_url, output_path, executable_name)
+            return self.download_and_extract(download_url, output_path, executable_name, version=version)
             
         except Exception as e:
             logger.error(f"Failed to download latest release: {e}")
