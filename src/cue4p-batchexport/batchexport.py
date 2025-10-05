@@ -1,6 +1,7 @@
 # Add two levels of parent dirs to sys path
 import sys
 import os
+import time
 from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -98,6 +99,9 @@ class BatchExporter:
         Raises:
             RuntimeError: If BatchExport execution fails
         """
+        start_time = time.time()
+        logger.debug(f"BatchExport timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
+        
         logger.info("Starting BatchExport process...")
         logger.info(f"Using mapping file: {self.mapping_file_path}")
         logger.info(f"Executing BatchExport with command: {str(self)}")
@@ -113,9 +117,19 @@ class BatchExporter:
                 timeout=3600  # 1 hour timeout
             )
             
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            logger.debug(f"BatchExport timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+            logger.debug(f"BatchExport execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+            
             logger.success("BatchExport completed successfully!")
             
         except Exception as e:
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            logger.debug(f"BatchExport timer ended (with error) at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+            logger.debug(f"BatchExport execution time before error: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+            
             error_msg = f"BatchExport execution failed: {e}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
@@ -139,6 +153,9 @@ def main(params=None, mapping_file_path=None):
     if mapping_file_path is None:
         raise ValueError("mapping_file_path must be provided")
     
+    main_start_time = time.time()
+    logger.debug(f"BatchExport main() timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(main_start_time))}")
+    
     try:
         batch_exporter = BatchExporter(params, mapping_file_path)
         
@@ -148,10 +165,20 @@ def main(params=None, mapping_file_path=None):
         # Run BatchExport
         batch_exporter.run()
         
+        main_end_time = time.time()
+        main_elapsed_time = main_end_time - main_start_time
+        logger.debug(f"BatchExport main() timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(main_end_time))}")
+        logger.debug(f"Total BatchExport main() execution time: {main_elapsed_time:.2f} seconds ({main_elapsed_time/60:.2f} minutes)")
+        
         logger.success("BatchExport process completed successfully!")
         return True
         
     except Exception as e:
+        main_end_time = time.time()
+        main_elapsed_time = main_end_time - main_start_time
+        logger.debug(f"BatchExport main() timer ended (with error) at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(main_end_time))}")
+        logger.debug(f"Total BatchExport main() execution time before error: {main_elapsed_time:.2f} seconds ({main_elapsed_time/60:.2f} minutes)")
+        
         logger.error(f"BatchExport failed: {e}")
         raise
 
