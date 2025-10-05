@@ -16,14 +16,162 @@ def get_dll_path():
     logger.info(f"DLL file confirmed: {dll_path}")
     return dll_path
 
+
+def get_mapping_file_path(params=None):
+    """
+    Get the path to the mapping file by running the complete mapper process.
+    
+    Args:
+        params (Params, optional): Parameters object. If None, will initialize from default params.
+        
+    Returns:
+        str: Path to the mapping file
+    """
+    if params is None:
+        from utils import init_params
+        params = init_params()
+    
+    return main(params)
+
+
+def find_existing_mapping_file(dumper7_output_dir):
+    """
+    Check if a mapping file already exists in the Dumper-7 output directory.
+    
+    Args:
+        dumper7_output_dir (str): Path to the Dumper-7 output directory
+        
+    Returns:
+        str or None: Path to the mapping file if found, None otherwise
+    """
+    try:
+        return get_mapper_from_sdk(dumper7_output_dir)
+    except Exception:
+        return None
+
+
+def get_mapper_from_sdk(dumper7_output_dir):
+    """
+    Extract the mapper file path from the Dumper-7 SDK output directory.
+    
+    Args:
+        dumper7_output_dir (str): Path to the Dumper-7 output directory
+        
+    Returns:
+        str: Path to the mapper file
+        
+    Raises:
+        Exception: If SDK directory structure is invalid or mapper file not found
+    """
+    # If more than 1 dir (name does not matter) exists in the Dumper-7 output path, throw an error
+    sdk_dirs = [d for d in os.listdir(dumper7_output_dir) if os.path.isdir(os.path.join(dumper7_output_dir, d))]
+    if len(sdk_dirs) != 1:
+        logger.error(f"Expected exactly one directory in Dumper-7 output path, found {len(sdk_dirs)}: {sdk_dirs}")
+        raise Exception(f"Invalid SDK directory structure: found {len(sdk_dirs)} directories instead of 1")
+    
+    # If exactly one dir, check if the Mappings dir exists within it
+    mapper_dir = os.path.join(dumper7_output_dir, sdk_dirs[0], 'Mappings')
+    if not os.path.exists(mapper_dir):
+        logger.error(f"Mappings directory not found in Dumper-7 output: {mapper_dir}")
+        raise Exception(f"Mappings directory not found: {mapper_dir}")
+    
+    logger.info(f"SDK creation appears to have succeeded - found Mappings directory: {mapper_dir}")
+    
+    # If mappings dir exists, get the file names
+    mapper_files = [f for f in os.listdir(mapper_dir) if os.path.isfile(os.path.join(mapper_dir, f))]
+    if len(mapper_files) == 0:
+        logger.error(f"No mapper files found in Mappings directory: {mapper_dir}")
+        raise Exception(f"No mapper files found in: {mapper_dir}")
+    elif len(mapper_files) > 1:
+        logger.error(f"Multiple mapper files found in Mappings directory, expected only one: {mapper_files}")
+        raise Exception(f"Multiple mapper files found, expected only one: {mapper_files}")
+    
+    mapper_file_path = os.path.join(mapper_dir, mapper_files[0])
+
+    if not os.path.exists(mapper_file_path):
+        logger.error(f"Mapper file not found at expected location: {mapper_file_path}")
+        raise Exception(f"Mapper file not found: {mapper_file_path}")
+
+    logger.info(f"Mapper file successfully created: {mapper_file_path}")
+    return mapper_file_path
+
+
+def launch_game_process(shipping_cmd_path):
+    """
+    Launch the game process.
+    
+    Args:
+        shipping_cmd_path (str): Path to the game executable
+        
+    Returns:
+        subprocess.Popen: The game process object
+    """
+    launch_game_params = [shipping_cmd_path]
+    
+    # Use subprocess.Popen directly to start game with normal window behavior
+    game_process = subprocess.Popen(launch_game_params)
+    logger.info(f"Game process started with PID: {game_process.pid}")
+    
+    # Check if the process started successfully
+    time.sleep(2)  # Give it a moment to start
+    if game_process.poll() is not None:
+        raise Exception(f"Game process failed to start (exit code: {game_process.returncode})")
+    
+    return game_process
+
+
+def terminate_game_process(game_process, game_process_name):
+    """
+    Terminate the game process.
+    
+    Args:
+        game_process (subprocess.Popen): The game process object
+        game_process_name (str): Name of the game process
+    """
+    wait = 10
+    logger.info(f"Waiting {wait} seconds before terminating game process just in case the dll did inject and just needs time to process...")
+    time.sleep(wait)
+
+    # Always try to terminate the game when done
+    logger.info("Terminating game process...")
+    
+    # First try terminating the subprocess object
+    if not terminate_process_object(game_process, 'launch-game'):
+        # If that fails, try terminating by process name
+        terminate_process_by_name(game_process_name)
+
+
+def perform_dll_injection(game_process_name, dll_path):
+    """
+    Perform DLL injection into the game process.
+    
+    Args:
+        game_process_name (str): Name of the game process
+        dll_path (str): Path to the DLL file
+        
+    Returns:
+        bool: True if injection was successful, False otherwise
+    """
+    # Wait for the game to be ready for injection
+    logger.info("Waiting for game to be ready for DLL injection...")
+    wait_for_process_ready_for_injection(game_process_name, initialization_time=10)
+    
+    logger.info("Game is ready, starting SDK creation process via DLL injection...")
+    
+    # Use Python-based DLL injection instead of external injector
+    injection_success = inject_dll_into_process(game_process_name, dll_path)
+    
+    if injection_success:
+        logger.info("SDK creation process completed successfully!")
+    
+    return injection_success
+
+
 def main(params=None):
     if params is None:
         raise ValueError("Params must be provided")
 
     game_process_name = os.path.basename(params.shipping_cmd_path)
-    launch_game_params = [
-        params.shipping_cmd_path,
-    ]
 
     logger.info(f"Clearing Dumper-7 output directory: {params.dumper7_output_dir}")
     clear_dir(params.dumper7_output_dir)  # Clear Dumper-7 output directory before starting the game to ensure only new dumps are present
@@ -40,95 +188,35 @@ def main(params=None):
     # Verify DLL file exists before bothering launching the game
     dll_path = get_dll_path()
     
-    # Use subprocess.Popen directly to start game with normal window behavior
-    game_process = subprocess.Popen(launch_game_params)
-    logger.info(f"Game process started with PID: {game_process.pid}")
-
-    def get_mapper_from_sdk():
-        # If more than 1 dir (name does not matter) exists in the Dumper-7 output path, throw an error
-        sdk_dirs = [d for d in os.listdir(params.dumper7_output_dir) if os.path.isdir(os.path.join(params.dumper7_output_dir, d))]
-        if len(sdk_dirs) != 1:
-            logger.error(f"Expected exactly one directory in Dumper-7 output path, found {len(sdk_dirs)}: {sdk_dirs}")
-            raise e
-        
-        # If exactly one dir, check if the Mappings dir exists within it
-        mapper_dir = os.path.join(params.dumper7_output_dir, sdk_dirs[0], 'Mappings')
-        if not os.path.exists(mapper_dir):
-            logger.error(f"Mappings directory not found in Dumper-7 output: {mapper_dir}")
-            raise e
-        
-        logger.info(f"SDK creation appears to have succeeded - found Mappings directory: {mapper_dir}")
-        
-        # If mappings dir exists, get the file names
-        mapper_files = [f for f in os.listdir(mapper_dir) if os.path.isfile(os.path.join(mapper_dir, f))]
-        if len(mapper_files) == 0:
-            logger.error(f"No mapper files found in Mappings directory: {mapper_dir}")
-            raise e
-        elif len(mapper_files) > 1:
-            logger.error(f"Multiple mapper files found in Mappings directory, expected only one: {mapper_files}")
-            raise e
-        mapper_file_path = os.path.join(mapper_dir, mapper_files[0])
-
-        if not os.path.exists(mapper_file_path):
-            logger.error(f"Mapper file not found at expected location: {mapper_file_path}")
-            raise e
-
-        logger.info(f"Mapper file successfully created: {mapper_file_path}")
-
-        return mapper_file_path
-    
-    def terminate():
-        wait = 10
-        logger.info(f"Waiting {wait} seconds before terminating game process just in case the dll did inject and just needs time to process...")
-        time.sleep(wait)
-
-        # Always try to terminate the game when done
-        logger.info("Terminating game process...")
-        
-        # First try terminating the subprocess object
-        if not terminate_process_object(game_process, 'launch-game'):
-            # If that fails, try terminating by process name
-            terminate_process_by_name(game_process_name)
+    # Launch the game process
+    game_process = launch_game_process(params.shipping_cmd_path)
     has_terminated = False
     mapping_file_path = None
     
     try:
-        # Check if the process started successfully
-        time.sleep(2)  # Give it a moment to start
-        if game_process.poll() is not None:
-            raise Exception(f"Game process failed to start (exit code: {game_process.returncode})")
-        
-        # Wait for the game to be ready for injection
-        logger.info("Waiting for game to be ready for DLL injection...")
-        wait_for_process_ready_for_injection(game_process_name, initialization_time=10)
-        
-        logger.info("Game is ready, starting SDK creation process via DLL injection...")
-        
-        # Use Python-based DLL injection instead of external injector
-        injection_success = inject_dll_into_process(game_process_name, dll_path)
+        # Perform DLL injection
+        injection_success = perform_dll_injection(game_process_name, dll_path)
         
         if not injection_success:
             raise Exception("DLL injection failed")
 
-        logger.info("SDK creation process completed successfully!")
-
     # If it says it errors, it may have actually worked. This actually happens every time for me so long as I'm running as administrator, but I don't know why.
     except Exception as e:
-        terminate()
+        terminate_game_process(game_process, game_process_name)
         has_terminated = True
 
         logger.warning("DLL injection says it failed, but it could be incorrect. Checking if the mapping file was created...")
-        mapping_file_path = get_mapper_from_sdk()
+        mapping_file_path = get_mapper_from_sdk(params.dumper7_output_dir)
         if mapping_file_path is None:
             logger.error("DLL injection failed and mapping file was not created. Cannot continue.")
             raise e
         
     if not has_terminated:
-        terminate()
+        terminate_game_process(game_process, game_process_name)
 
     if mapping_file_path is None:
         # If we didn't already get the mapper file path from the exception handler, try to get it now 
-        mapping_file_path = get_mapper_from_sdk()
+        mapping_file_path = get_mapper_from_sdk(params.dumper7_output_dir)
 
     return mapping_file_path
 
