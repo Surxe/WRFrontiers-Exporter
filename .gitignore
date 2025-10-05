@@ -172,3 +172,4 @@ todo.txt
 # Downloaded dependencies
 src/cue4p-batchexport/BatchExport/
 oo2core_9_win64.dll
+src/steam/DepotDownloader/
