@@ -1,22 +1,19 @@
 import os
 import shutil
 from loguru import logger
-from utils import run_process
+from utils import run_process, init_params, Params
 
 APP_ID = '1491000'  # war robots: frontier's app_id
 DEPOT_ID = '1491005'  # the big depot
 
 
 class DepotDownloader:
-    def __init__(self, wrf_dir, depot_downloader_cmd_path, steam_username, steam_password, force):
-        if not depot_downloader_cmd_path:
-            raise Exception('Config for DepotDownloader path is required')
-        if not os.path.exists(depot_downloader_cmd_path):
-            raise Exception(f'Could not find DepotDownloader at path "{depot_downloader_cmd_path}"')
+    def __init__(self, wrf_dir, steam_username, steam_password, force):
+        self.depot_downloader_cmd_path = 'src/steam/DepotDownloader/DepotDownloader.exe'
+        if not os.path.exists(self.depot_downloader_cmd_path):
+            raise Exception('Is DepotDownloader installed? Run dependency_manager.py')
         if not steam_username or not steam_password:
             raise Exception('Steam username and password are required')
-
-        self.depot_downloader_cmd_path = depot_downloader_cmd_path
 
         self.app_id = APP_ID
         self.depot_id = DEPOT_ID
@@ -102,3 +99,17 @@ class DepotDownloader:
         logger.debug('Writing manifest id', manifest_id, 'to', self.manifest_path)
         with open(self.manifest_path, 'w') as f:
             f.write(manifest_id)
+
+if __name__ == '__main__':
+    Params()
+    params = init_params()
+
+    if params is None:
+        raise ValueError("Params must be provided")
+    
+    DepotDownloader(
+        wrf_dir=params.steam_game_download_path,
+        steam_username=params.steam_username,
+        steam_password=params.steam_password,
+        force=params.force_download,
+    ).run(manifest_id=None) # get latest
