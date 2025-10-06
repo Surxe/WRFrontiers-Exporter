@@ -93,7 +93,7 @@ def run_steam_download_update(params):
             steam_password=params.steam_password,
             force=params.force_download,
         )
-        result = downloader.run(manifest_id=None)  # get latest
+        result = downloader.run(manifest_id=params.manifest_id)
         
         end_time = time.time()
         elapsed_time = end_time - start_time

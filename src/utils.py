@@ -16,8 +16,8 @@ class Params:
     """
     A class to hold parameters for the application.
     """
-    def __init__(self, log_level=None, 
-                 force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None, 
+    def __init__(self, log_level=None,
+                 manifest_id=None, force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None,
                  shipping_cmd_path=None, dumper7_output_dir=None, 
                  output_mapper_file=None, output_data_dir=None):
         
@@ -25,6 +25,8 @@ class Params:
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
         
         # Steam download
+        self.manifest_id = manifest_id if manifest_id is not None else os.getenv('MANIFEST_ID')
+        self.manifest_id = self.manifest_id if self.manifest_id != "" else None  # Treat empty string as None
         self.force_download = is_truthy(force_download if force_download is not None else (os.getenv('FORCE_DOWNLOAD', 'False').lower() == 'true'))
         self.steam_username = steam_username if steam_username is not None else os.getenv('STEAM_USERNAME')
         self.steam_password = steam_password if steam_password is not None else os.getenv('STEAM_PASSWORD')
@@ -114,6 +116,7 @@ class Params:
             f"Params initialized with:\n"
             f"LOG_LEVEL: {self.log_level}\n"
             
+            f"MANIFEST_ID: {self.manifest_id}\n"
             f"FORCE_DOWNLOAD: {self.force_download}\n"
             f"STEAM_USERNAME: {self.steam_username}\n"
             #f"STEAM_PASSWORD: {self.steam_password}\n"
@@ -130,9 +133,9 @@ class Params:
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, output_data_dir=None, output_mapper_file=None):
+def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file)
+    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file)
     return PARAMS
 
 def is_truthy(string):

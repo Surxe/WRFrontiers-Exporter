@@ -112,4 +112,4 @@ if __name__ == '__main__':
         steam_username=params.steam_username,
         steam_password=params.steam_password,
         force=params.force_download,
-    ).run(manifest_id=None) # get latest
+    ).run(manifest_id=params.manifest_id)
