@@ -187,4 +187,4 @@ if __name__ == "__main__":
     import sys
     params = Params()
     
-    main(params, params.output_mapper_path)
+    main(params, params.output_mapper_file)

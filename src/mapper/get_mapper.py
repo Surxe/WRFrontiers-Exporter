@@ -21,7 +21,7 @@ def get_dll_path():
 def get_mapping_file_path(params=None):
     """
     Get the path to the mapping file by running the complete mapper process.
-    The returned path will be the final output location (params.output_mapper_path) 
+    The returned path will be the final output location (params.output_mapper_file) 
     if copying is successful, otherwise the original extracted location.
     
     Args:
@@ -53,13 +53,13 @@ def find_existing_mapping_file(dumper7_output_dir):
         return None
 
 
-def copy_mapper_file_to_output(source_mapper_path, output_mapper_path):
+def copy_mapper_file_to_output(source_mapper_path, output_mapper_file):
     """
     Copy a mapper file from source to output location.
     
     Args:
         source_mapper_path (str): Path to the source mapper file
-        output_mapper_path (str): Path where the mapper file should be copied
+        output_mapper_file (str): Path where the mapper file should be copied
         
     Returns:
         str: Path to the copied file if successful, None otherwise
@@ -70,14 +70,14 @@ def copy_mapper_file_to_output(source_mapper_path, output_mapper_path):
             return None
         
         # Ensure the parent directory exists
-        parent_dir = os.path.dirname(output_mapper_path)
+        parent_dir = os.path.dirname(output_mapper_file)
         os.makedirs(parent_dir, exist_ok=True)
         
         # Copy the mapper file
-        shutil.copy2(source_mapper_path, output_mapper_path)
-        logger.info(f"Mapper file copied from {source_mapper_path} to {output_mapper_path}")
+        shutil.copy2(source_mapper_path, output_mapper_file)
+        logger.info(f"Mapper file copied from {source_mapper_path} to {output_mapper_file}")
         
-        return output_mapper_path
+        return output_mapper_file
         
     except Exception as e:
         logger.error(f"Failed to copy mapper file: {e}")
@@ -257,12 +257,12 @@ def main(params=None):
         raise Exception("Mapper file path could not be determined after SDK creation")
     
     # Ensure the parent directory exists
-    parent_dir = os.path.dirname(params.output_mapper_path)
+    parent_dir = os.path.dirname(params.output_mapper_file)
     os.makedirs(parent_dir, exist_ok=True)
     
     # Copy the mapper file
-    shutil.copy2(mapping_file_path, params.output_mapper_path)
-    logger.info(f"Mapper file copied from {mapping_file_path} to {params.output_mapper_path}")
+    shutil.copy2(mapping_file_path, params.output_mapper_file)
+    logger.info(f"Mapper file copied from {mapping_file_path} to {params.output_mapper_file}")
 
 
 if __name__ == '__main__':
