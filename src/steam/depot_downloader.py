@@ -1,7 +1,7 @@
 import os
 import shutil
 from loguru import logger
-from utils import run_process
+from utils import run_process, init_params, Params
 
 APP_ID = '1491000'  # war robots: frontier's app_id
 DEPOT_ID = '1491005'  # the big depot
@@ -102,3 +102,18 @@ class DepotDownloader:
         logger.debug('Writing manifest id', manifest_id, 'to', self.manifest_path)
         with open(self.manifest_path, 'w') as f:
             f.write(manifest_id)
+
+if __name__ == '__main__':
+    Params()
+    params = init_params()
+
+    if params is None:
+        raise ValueError("Params must be provided")
+    
+    DepotDownloader(
+        wrf_dir=params.steam_game_download_path,
+        depot_downloader_cmd_path='src/steam/DepotDownloader/DepotDownloader.exe',
+        steam_username=params.steam_username,
+        steam_password=params.steam_password,
+        force=params.force_download,
+    ).run(manifest_id=None) # get latest
