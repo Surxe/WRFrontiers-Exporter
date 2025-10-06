@@ -8,15 +8,12 @@ DEPOT_ID = '1491005'  # the big depot
 
 
 class DepotDownloader:
-    def __init__(self, wrf_dir, depot_downloader_cmd_path, steam_username, steam_password, force):
-        if not depot_downloader_cmd_path:
-            raise Exception('Config for DepotDownloader path is required')
-        if not os.path.exists(depot_downloader_cmd_path):
-            raise Exception(f'Could not find DepotDownloader at path "{depot_downloader_cmd_path}"')
+    def __init__(self, wrf_dir, steam_username, steam_password, force):
+        self.depot_downloader_cmd_path = 'src/steam/DepotDownloader/DepotDownloader.exe'
+        if not os.path.exists(self.depot_downloader_cmd_path):
+            raise Exception('Is DepotDownloader installed? Run dependency_manager.py')
         if not steam_username or not steam_password:
             raise Exception('Steam username and password are required')
-
-        self.depot_downloader_cmd_path = depot_downloader_cmd_path
 
         self.app_id = APP_ID
         self.depot_id = DEPOT_ID
@@ -112,7 +109,6 @@ if __name__ == '__main__':
     
     DepotDownloader(
         wrf_dir=params.steam_game_download_path,
-        depot_downloader_cmd_path='src/steam/DepotDownloader/DepotDownloader.exe',
         steam_username=params.steam_username,
         steam_password=params.steam_password,
         force=params.force_download,
