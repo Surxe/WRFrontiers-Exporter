@@ -4,6 +4,7 @@
 snake_case
 
 ## Path variable naming
-* Folders -> `dir`
-* Generic File -> `path`
+* Folder -> `dir`
+* File
   * Executable File -> `cmd`
+  * Other File -> `file`

@@ -2,6 +2,7 @@
 import sys
 import os
 import time
+import shutil
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils import init_params, Params, clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
@@ -20,12 +21,14 @@ def get_dll_path():
 def get_mapping_file_path(params=None):
     """
     Get the path to the mapping file by running the complete mapper process.
+    The returned path will be the final output location (params.output_mapper_file) 
+    if copying is successful, otherwise the original extracted location.
     
     Args:
         params (Params, optional): Parameters object. If None, will initialize from default params.
         
     Returns:
-        str: Path to the mapping file
+        str: Path to the mapping file (preferably at the output location)
     """
     if params is None:
         from utils import init_params
@@ -47,6 +50,37 @@ def find_existing_mapping_file(dumper7_output_dir):
     try:
         return get_mapper_from_sdk(dumper7_output_dir)
     except Exception:
+        return None
+
+
+def copy_mapper_file_to_output(source_mapper_path, output_mapper_file):
+    """
+    Copy a mapper file from source to output location.
+    
+    Args:
+        source_mapper_path (str): Path to the source mapper file
+        output_mapper_file (str): Full file path where the mapper file should be copied (including filename)
+        
+    Returns:
+        str: Path to the copied file if successful, None otherwise
+    """
+    try:
+        if not os.path.exists(source_mapper_path):
+            logger.error(f"Source mapper file does not exist: {source_mapper_path}")
+            return None
+        
+        # Ensure the parent directory exists
+        parent_dir = os.path.dirname(output_mapper_file)
+        os.makedirs(parent_dir, exist_ok=True)
+        
+        # Copy the mapper file
+        shutil.copy2(source_mapper_path, output_mapper_file)
+        logger.info(f"Mapper file copied from {source_mapper_path} to {output_mapper_file}")
+        
+        return output_mapper_file
+        
+    except Exception as e:
+        logger.error(f"Failed to copy mapper file: {e}")
         return None
 
 
@@ -181,7 +215,7 @@ def main(params=None):
 
     # Check if running as administrator (required for DLL injection)
     if not is_admin():
-        logger.warning("Not running as administrator - DLL injection will likely fail. Launch IDE or script as administrator.")
+        logger.warning("Not running as administrator - DLL injection could fail. Launch IDE or script as administrator if this run fails.")
     else:
         logger.info("Running with administrator privileges")
 
@@ -218,7 +252,18 @@ def main(params=None):
         # If we didn't already get the mapper file path from the exception handler, try to get it now 
         mapping_file_path = get_mapper_from_sdk(params.dumper7_output_dir)
 
-    return mapping_file_path
+    # Copy the mapper file to the output path with the desired filename
+    if not mapping_file_path:
+        raise Exception("Mapper file path could not be determined after SDK creation")
+    
+    # Ensure the parent directory exists
+    parent_dir = os.path.dirname(params.output_mapper_file)
+    os.makedirs(parent_dir, exist_ok=True)
+    
+    # Copy the mapper file to the specified path and filename
+    # This will use the filename from params.output_mapper_file, not the original extracted filename
+    shutil.copy2(mapping_file_path, params.output_mapper_file)
+    logger.info(f"Mapper file copied from {mapping_file_path} to {params.output_mapper_file}")
 
 
 if __name__ == '__main__':

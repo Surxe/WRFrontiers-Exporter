@@ -19,7 +19,7 @@ class Params:
     def __init__(self, log_level=None, 
                  force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None, 
                  shipping_cmd_path=None, dumper7_output_dir=None, 
-                 output_mapper_path=None, output_data_dir=None):
+                 output_mapper_file=None, output_data_dir=None):
         
         # Use provided args if not None, else fallback to environment
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
@@ -35,7 +35,7 @@ class Params:
         self.dumper7_output_dir = dumper7_output_dir if dumper7_output_dir is not None else os.getenv('DUMPER7_OUTPUT_DIR')
 
         # BatchExport
-        self.output_mapper_path = output_mapper_path if output_mapper_path is not None else os.getenv('OUTPUT_MAPPER_PATH')
+        self.output_mapper_file = output_mapper_file if output_mapper_file is not None else os.getenv('OUTPUT_MAPPER_FILE')
         self.output_data_dir = output_data_dir if output_data_dir is not None else os.getenv('OUTPUT_DATA_DIR')
         
         # Setup loguru logging to /logs dir
@@ -94,12 +94,12 @@ class Params:
         
 
         # BatchExport
-        if not self.output_mapper_path:
-            raise ValueError("OUTPUT_MAPPER_PATH environment variable is not set.")
+        if not self.output_mapper_file:
+            raise ValueError("OUTPUT_MAPPER_FILE environment variable is not set.")
         # Just check that its parent dir exists, the file itself will be created
-        parent_dir = os.path.dirname(self.output_mapper_path)
+        parent_dir = os.path.dirname(self.output_mapper_file)
         if not os.path.exists(parent_dir):
-            raise ValueError(f"Parent directory for OUTPUT_MAPPER_PATH '{self.output_mapper_path}' does not exist.")
+            raise ValueError(f"Parent directory for OUTPUT_MAPPER_FILE '{self.output_mapper_file}' does not exist.")
 
         if not self.output_data_dir:
             raise ValueError("OUTPUT_DATA_DIR environment variable is not set.")
@@ -122,7 +122,7 @@ class Params:
             f"SHIPPING_CMD_PATH: {self.shipping_cmd_path}\n"
             f"DUMPER7_OUTPUT_DIR: {self.dumper7_output_dir}\n"
 
-            f"OUTPUT_MAPPER_PATH: {self.output_mapper_path}\n"
+            f"OUTPUT_MAPPER_FILE: {self.output_mapper_file}\n"
             f"OUTPUT_DATA_DIR: {self.output_data_dir}\n"
         )
 
@@ -130,9 +130,9 @@ class Params:
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, output_data_dir=None, output_mapper_path=None):
+def init_params(log_level=None, output_data_dir=None, output_mapper_file=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, output_data_dir=output_data_dir, output_mapper_path=output_mapper_path)
+    PARAMS = Params(log_level=log_level, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file)
     return PARAMS
 
 def is_truthy(string):
