@@ -265,6 +265,7 @@ def main(params=None):
     shutil.copy2(mapping_file_path, params.output_mapper_file)
     logger.info(f"Mapper file copied from {mapping_file_path} to {params.output_mapper_file}")
 
+    return params.output_mapper_file
 
 if __name__ == '__main__':
     Params()
