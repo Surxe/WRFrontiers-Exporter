@@ -252,7 +252,7 @@ def main(params=None):
         # If we didn't already get the mapper file path from the exception handler, try to get it now 
         mapping_file_path = get_mapper_from_sdk(params.dumper7_output_dir)
 
-    # Copy the mapper file to the output path
+    # Copy the mapper file to the output path with the desired filename
     if not mapping_file_path:
         raise Exception("Mapper file path could not be determined after SDK creation")
     
@@ -260,7 +260,8 @@ def main(params=None):
     parent_dir = os.path.dirname(params.output_mapper_file)
     os.makedirs(parent_dir, exist_ok=True)
     
-    # Copy the mapper file
+    # Copy the mapper file to the specified path and filename
+    # This will use the filename from params.output_mapper_file, not the original extracted filename
     shutil.copy2(mapping_file_path, params.output_mapper_file)
     logger.info(f"Mapper file copied from {mapping_file_path} to {params.output_mapper_file}")
 
