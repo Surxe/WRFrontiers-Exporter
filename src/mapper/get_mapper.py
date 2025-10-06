@@ -59,7 +59,7 @@ def copy_mapper_file_to_output(source_mapper_path, output_mapper_file):
     
     Args:
         source_mapper_path (str): Path to the source mapper file
-        output_mapper_file (str): Path where the mapper file should be copied
+        output_mapper_file (str): Full file path where the mapper file should be copied (including filename)
         
     Returns:
         str: Path to the copied file if successful, None otherwise
