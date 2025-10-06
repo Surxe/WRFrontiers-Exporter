@@ -17,7 +17,7 @@ class Params:
     A class to hold parameters for the application.
     """
     def __init__(self, log_level=None, 
-                 depot_download_cmd_path=None, force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None, 
+                 force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None, 
                  shipping_cmd_path=None, dumper7_output_dir=None, 
                  output_mapper_path=None, output_data_dir=None):
         
@@ -25,7 +25,6 @@ class Params:
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
         
         # Steam download
-        self.depot_downloader_cmd_path = depot_download_cmd_path if depot_download_cmd_path is not None else os.getenv('DEPOT_DOWNLOADER_CMD_PATH')
         self.force_download = is_truthy(force_download if force_download is not None else (os.getenv('FORCE_DOWNLOAD', 'False').lower() == 'true'))
         self.steam_username = steam_username if steam_username is not None else os.getenv('STEAM_USERNAME')
         self.steam_password = steam_password if steam_password is not None else os.getenv('STEAM_PASSWORD')
@@ -67,11 +66,6 @@ class Params:
             raise ValueError(f"LOG_LEVEL {self.log_level} must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.")
 
         # Steam download
-        if not self.depot_downloader_cmd_path:
-            raise ValueError("DEPOT_DOWNLOADER_CMD_PATH environment variable is not set.")
-        if not os.path.exists(self.depot_downloader_cmd_path):
-            raise ValueError(f"DEPOT_DOWNLOADER_CMD_PATH '{self.depot_downloader_cmd_path}' does not exist.")
-
         if not isinstance(self.force_download, bool):
             raise ValueError("FORCE_DOWNLOAD must be a boolean value (True or False).")
 
@@ -120,7 +114,6 @@ class Params:
             f"Params initialized with:\n"
             f"LOG_LEVEL: {self.log_level}\n"
             
-            f"DEPOT_DOWNLOADER_CMD_PATH: {self.depot_downloader_cmd_path}\n"
             f"FORCE_DOWNLOAD: {self.force_download}\n"
             f"STEAM_USERNAME: {self.steam_username}\n"
             #f"STEAM_PASSWORD: {self.steam_password}\n"

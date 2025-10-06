@@ -12,7 +12,7 @@ def main(params=None):
     
     DepotDownloader(
         wrf_dir=params.steam_game_download_path,
-        depot_downloader_cmd_path=params.depot_downloader_cmd_path,
+        depot_downloader_cmd_path='src/steam/DepotDownloader/DepotDownloader.exe',
         steam_username=params.steam_username,
         steam_password=params.steam_password,
         force=params.force_download,
