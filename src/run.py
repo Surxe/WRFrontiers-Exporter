@@ -264,7 +264,7 @@ def main(skip_dependencies=False, skip_steam_update=False, skip_mapper=False, sk
     logger.debug(f"WRFrontiers-Exporter overall timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(overall_start_time))}")
     
     try:
-        logger.info("🚀 Starting WRFrontiers-Exporter Complete Process 🚀")
+        logger.info("Starting WRFrontiers-Exporter Complete Process")
         logger.info("=" * 80)
         
         # Initialize parameters
@@ -321,7 +321,7 @@ def main(skip_dependencies=False, skip_steam_update=False, skip_mapper=False, sk
         logger.debug(f"Total WRFrontiers-Exporter execution time: {overall_elapsed_time:.2f} seconds ({overall_elapsed_time/60:.2f} minutes)")
         
         logger.info("=" * 80)
-        logger.success("🎉 WRFrontiers-Exporter Complete Process Finished Successfully! 🎉")
+        logger.success("WRFrontiers-Exporter Complete Process Finished Successfully!")
         logger.info("=" * 80)
         
         return True
