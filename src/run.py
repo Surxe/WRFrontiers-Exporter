@@ -135,7 +135,7 @@ def run_mapper_creation(params):
         from mapper.get_mapper import main as mapper_main
         
         logger.info("Running DLL injection to create mapper file...")
-        logger.info(f"Game executable: {params.shipping_cmd_path}")
+        logger.info(f"Steam game download path: {params.steam_game_download_path}")
         logger.info(f"Dumper-7 output directory: {params.dumper7_output_dir}")
         logger.info(f"Output mapper file: {params.output_mapper_file}")
         

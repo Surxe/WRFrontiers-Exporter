@@ -205,7 +205,14 @@ def main(params=None):
     if params is None:
         raise ValueError("Params must be provided")
 
-    game_process_name = os.path.basename(params.shipping_cmd_path)
+    # Construct shipping executable path from steam download path
+    shipping_cmd_path = os.path.join(params.steam_game_download_path, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
+    
+    # Validate that the shipping executable exists
+    if not os.path.exists(shipping_cmd_path):
+        raise ValueError(f"Shipping executable not found at: {shipping_cmd_path}. Please ensure the game is downloaded to {params.steam_game_download_path}")
+    
+    game_process_name = os.path.basename(shipping_cmd_path)
 
     logger.info(f"Clearing Dumper-7 output directory: {params.dumper7_output_dir}")
     clear_dir(params.dumper7_output_dir)  # Clear Dumper-7 output directory before starting the game to ensure only new dumps are present
@@ -223,7 +230,7 @@ def main(params=None):
     dll_path = get_dll_path()
     
     # Launch the game process
-    game_process = launch_game_process(params.shipping_cmd_path)
+    game_process = launch_game_process(shipping_cmd_path)
     has_terminated = False
     mapping_file_path = None
     
