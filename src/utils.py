@@ -31,7 +31,6 @@ class Params:
         self.steam_game_download_path = steam_game_download_path if steam_game_download_path is not None else os.getenv('STEAM_GAME_DOWNLOAD_PATH')
         
         # Mapping
-        self.shipping_cmd_path = shipping_cmd_path if shipping_cmd_path is not None else os.getenv('SHIPPING_CMD_PATH')
         self.dumper7_output_dir = dumper7_output_dir if dumper7_output_dir is not None else os.getenv('DUMPER7_OUTPUT_DIR')
 
         # BatchExport
@@ -82,11 +81,6 @@ class Params:
         
 
         # Mapping
-        if not self.shipping_cmd_path:
-            raise ValueError("SHIPPING_CMD_PATH environment variable is not set.")
-        if not os.path.exists(self.shipping_cmd_path):
-            raise ValueError(f"SHIPPING_CMD_PATH '{self.shipping_cmd_path}' does not exist.")
-        
         if not self.dumper7_output_dir:
             raise ValueError("DUMPER7_OUTPUT_DIR environment variable is not set.")
         if not os.path.exists(self.dumper7_output_dir):
@@ -119,7 +113,6 @@ class Params:
             #f"STEAM_PASSWORD: {self.steam_password}\n"
             f"STEAM_GAME_DOWNLOAD_PATH: {self.steam_game_download_path}\n"
             
-            f"SHIPPING_CMD_PATH: {self.shipping_cmd_path}\n"
             f"DUMPER7_OUTPUT_DIR: {self.dumper7_output_dir}\n"
 
             f"OUTPUT_MAPPER_FILE: {self.output_mapper_file}\n"
