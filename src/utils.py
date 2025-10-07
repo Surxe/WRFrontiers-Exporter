@@ -131,9 +131,9 @@ class Params:
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None, output_mapper_force=None):
+def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file, output_mapper_force=output_mapper_force)
+    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file)
     return PARAMS
 
 def is_truthy(string):
