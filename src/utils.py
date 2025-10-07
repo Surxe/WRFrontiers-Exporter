@@ -18,8 +18,8 @@ class Params:
     """
     def __init__(self, log_level=None,
                  manifest_id=None, force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None,
-                 shipping_cmd_path=None, dumper7_output_dir=None, 
-                 output_mapper_file=None, output_data_dir=None):
+                 dumper7_output_dir=None, 
+                 output_mapper_file=None, output_mapper_force=None, output_data_dir=None):
         
         # Use provided args if not None, else fallback to environment
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
@@ -37,6 +37,7 @@ class Params:
 
         # BatchExport
         self.output_mapper_file = output_mapper_file if output_mapper_file is not None else os.getenv('OUTPUT_MAPPER_FILE')
+        self.output_mapper_force = is_truthy(output_mapper_force if output_mapper_force is not None else (os.getenv('OUTPUT_MAPPER_FORCE', 'True').lower() == 'true'))
         self.output_data_dir = output_data_dir if output_data_dir is not None else os.getenv('OUTPUT_DATA_DIR')
         
         # Setup loguru logging to /logs dir
@@ -96,6 +97,9 @@ class Params:
         parent_dir = os.path.dirname(self.output_mapper_file)
         if not os.path.exists(parent_dir):
             raise ValueError(f"Parent directory for OUTPUT_MAPPER_FILE '{self.output_mapper_file}' does not exist.")
+        
+        if not isinstance(self.output_mapper_force, bool):
+            raise ValueError("OUTPUT_MAPPER_FORCE must be a boolean value (True or False).")
 
         if not self.output_data_dir:
             raise ValueError("OUTPUT_DATA_DIR environment variable is not set.")
@@ -119,6 +123,7 @@ class Params:
             f"DUMPER7_OUTPUT_DIR: {self.dumper7_output_dir}\n"
 
             f"OUTPUT_MAPPER_FILE: {self.output_mapper_file}\n"
+            f"OUTPUT_MAPPER_FORCE: {self.output_mapper_force}\n"
             f"OUTPUT_DATA_DIR: {self.output_data_dir}\n"
         )
 
@@ -126,9 +131,9 @@ class Params:
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None):
+def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None, output_mapper_force=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file)
+    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file, output_mapper_force=output_mapper_force)
     return PARAMS
 
 def is_truthy(string):

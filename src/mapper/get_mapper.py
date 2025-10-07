@@ -205,6 +205,11 @@ def main(params=None):
     if params is None:
         raise ValueError("Params must be provided")
 
+    # Check if mapper file already exists and force is False
+    if os.path.exists(params.output_mapper_file) and not params.output_mapper_force:
+        logger.info(f"Mapper file already exists at {params.output_mapper_file} and OUTPUT_MAPPER_FORCE is False. Skipping mapper creation.")
+        return params.output_mapper_file
+
     # Construct shipping executable path from steam download path
     shipping_cmd_path = os.path.join(params.steam_game_download_path, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
     
