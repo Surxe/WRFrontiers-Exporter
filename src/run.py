@@ -26,16 +26,18 @@ import traceback
 from dependency_manager import main as dependency_main
 
 
-def run_dependency_manager():
+def run_dependency_manager(params):
     """
     Run the dependency manager to download/update all required dependencies.
     
+    Args:
+        params (Params): Configuration parameters
+        
     Returns:
         bool: True if successful, False otherwise
     """
     start_time = time.time()
     logger.debug(f"Dependency manager timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
-    PARAMS = init_params()
 
     try:
         logger.info("=" * 60)
@@ -43,7 +45,7 @@ def run_dependency_manager():
         logger.info("=" * 60)
         
         logger.info("Running dependency manager to ensure all dependencies are up to date...")
-        result = dependency_main(force_download=PARAMS.force_download_dependencies)
+        result = dependency_main(force_download=params.force_download_dependencies)
         
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -277,7 +279,7 @@ def main(skip_dependencies=False, skip_steam_update=False, skip_mapper=False, sk
         
         # Step 1: Dependency Manager
         if not skip_dependencies:
-            if not run_dependency_manager():
+            if not run_dependency_manager(params):
                 logger.error("Dependency manager failed. Cannot continue.")
                 return False
         else:

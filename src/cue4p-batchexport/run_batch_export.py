@@ -162,6 +162,6 @@ def main(params=None, mapping_file_path=None):
 
 if __name__ == "__main__":
     import sys
-    params = Params()
+    params = init_params()
     
     main(params, params.output_mapper_file)
