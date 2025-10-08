@@ -75,11 +75,9 @@ class BatchExporter:
                 "Please ensure STEAM_GAME_DOWNLOAD_PATH is set correctly in your environment."
             )
         
-        if not os.path.exists(self.params.output_data_dir):
-            raise FileNotFoundError(
-                f"Output data directory not found: {self.params.output_data_dir}. "
-                "Please ensure OUTPUT_DATA_DIR is set correctly in your environment."
-            )
+        # Create output data directory if it doesn't exist
+        os.makedirs(self.params.output_data_dir, exist_ok=True)
+        logger.info(f"Ensured output data directory exists: {self.params.output_data_dir}")
         
         # Ensure its parent dir exists, but not the file
         parent_dir = os.path.dirname(self.mapping_file_path)
@@ -139,6 +137,11 @@ def main(params=None, mapping_file_path=None):
     
     if mapping_file_path is None:
         raise ValueError("mapping_file_path must be provided")
+    
+    # Check if export directory has contents and force is False
+    if os.path.exists(params.output_data_dir) and os.listdir(params.output_data_dir) and not params.force_export:
+        logger.info(f"Export directory {params.output_data_dir} already has contents and FORCE_EXPORT is False. Skipping batch export.")
+        return True
     
     try:
         batch_exporter = BatchExporter(params, mapping_file_path)

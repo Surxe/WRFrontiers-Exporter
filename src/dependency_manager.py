@@ -155,7 +155,7 @@ class DependencyManager:
                 zip_path.unlink()
             raise
     
-    def download_github_release_latest(self, repo_owner, repo_name, asset_pattern, output_path, executable_name=None):
+    def download_github_release_latest(self, repo_owner, repo_name, asset_pattern, output_path, executable_name=None, force=False):
         """
         Download the latest release from a GitHub repository.
         
@@ -165,11 +165,14 @@ class DependencyManager:
             asset_pattern (str): Pattern to match asset name (e.g., "windows-x64.zip")
             output_path (str or Path): Directory to extract to
             executable_name (str, optional): Name of main executable to verify
+            force (bool): Force download even if same version exists
             
         Returns:
             bool: True if successful, False otherwise
         """
         try:
+            output_path = Path(output_path)
+            
             # Get latest release info
             api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
             logger.info(f"Fetching latest release info from: {api_url}")
@@ -178,6 +181,17 @@ class DependencyManager:
             version = release_info.get('tag_name', 'unknown')
             
             logger.info(f"Latest version: {version}")
+            
+            # Check if we already have this version (unless force is True)
+            if not force:
+                current_version = self._get_installed_version(output_path)
+                if current_version == version:
+                    logger.info(f"Version {version} already installed. Skipping download.")
+                    return True
+                elif current_version:
+                    logger.info(f"Updating from version {current_version} to {version}")
+            else:
+                logger.info("Force download enabled, downloading regardless of current version")
             
             # Find matching asset
             assets = release_info.get('assets', [])
@@ -350,12 +364,13 @@ class DependencyManager:
             logger.debug("Cleaned up temporary download directory")
 
 
-def install_batch_export(output_path=None):
+def install_batch_export(output_path=None, force=False):
     """
     Install BatchExport dependency.
     
     Args:
         output_path (str, optional): Path to install to. Defaults to src/cue4p-batchexport/BatchExport/
+        force (bool): Force download even if same version exists
     """
     if output_path is None:
         script_dir = Path(__file__).parent
@@ -368,18 +383,20 @@ def install_batch_export(output_path=None):
             repo_name="CUE4P-BatchExport", 
             asset_pattern="BatchExport-windows-x64.zip",
             output_path=output_path,
-            executable_name="BatchExport.exe"
+            executable_name="BatchExport.exe",
+            force=force
         )
     finally:
         dm.cleanup_temp_files()
 
 
-def install_depot_downloader(output_path=None):
+def install_depot_downloader(output_path=None, force=False):
     """
     Install DepotDownloader dependency from the latest GitHub release.
     
     Args:
         output_path (str, optional): Path to install to. Defaults to src/steam/DepotDownloader/
+        force (bool): Force download even if same version exists
     """
     if output_path is None:
         script_dir = Path(__file__).parent
@@ -392,24 +409,30 @@ def install_depot_downloader(output_path=None):
             repo_name="DepotDownloader",
             asset_pattern="windows-x64.zip",
             output_path=output_path,
-            executable_name="DepotDownloader.exe"
+            executable_name="DepotDownloader.exe",
+            force=force
         )
     finally:
         dm.cleanup_temp_files()
 
 
-def main():
-    """Main function to install all dependencies."""
+def main(force_download=False):
+    """
+    Main function to install all dependencies.
+    
+    Args:
+        force_download (bool): Force download even if same version exists
+    """
     logger.info("Installing WRFrontiers-Exporter dependencies...")
     
     try:
         # Install BatchExport
         logger.info("Installing BatchExport...")
-        install_batch_export()
+        install_batch_export(force=force_download)
         
         # Install DepotDownloader
         logger.info("Installing DepotDownloader...")
-        install_depot_downloader()
+        install_depot_downloader(force=force_download)
         
         logger.success("All dependencies installed successfully!")
         

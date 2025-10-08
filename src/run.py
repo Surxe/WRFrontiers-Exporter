@@ -20,9 +20,10 @@ from pathlib import Path
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils import init_params, Params
+from utils import init_params
 from loguru import logger
 import traceback
+from dependency_manager import main as dependency_main
 
 
 def run_dependency_manager():
@@ -34,16 +35,15 @@ def run_dependency_manager():
     """
     start_time = time.time()
     logger.debug(f"Dependency manager timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
-    
+    PARAMS = init_params()
+
     try:
         logger.info("=" * 60)
         logger.info("STEP 1: DEPENDENCY MANAGER")
         logger.info("=" * 60)
         
-        from dependency_manager import main as dependency_main
-        
         logger.info("Running dependency manager to ensure all dependencies are up to date...")
-        result = dependency_main()
+        result = dependency_main(force_download=PARAMS.force_download_dependencies)
         
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -91,7 +91,7 @@ def run_steam_download_update(params):
             wrf_dir=params.steam_game_download_path,
             steam_username=params.steam_username,
             steam_password=params.steam_password,
-            force=params.force_download,
+            force=params.force_steam_download,
         )
         result = downloader.run(manifest_id=params.manifest_id)
         
