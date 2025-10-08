@@ -16,13 +16,16 @@ class Params:
     """
     A class to hold parameters for the application.
     """
-    def __init__(self, log_level=None,
+    def __init__(self, log_level=None, force_download_dependencies=None,
                  manifest_id=None, force_steam_download=None, steam_username=None, steam_password=None, steam_game_download_path=None,
                  dumper7_output_dir=None, 
                  output_mapper_file=None, force_get_mapper=None, output_data_dir=None, force_export=None):
         
         # Use provided args if not None, else fallback to environment
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
+        
+        # Dependencies
+        self.force_download_dependencies = is_truthy(force_download_dependencies if force_download_dependencies is not None else (os.getenv('FORCE_DOWNLOAD_DEPENDENCIES', 'False').lower() == 'true'))
         
         # Steam download
         self.manifest_id = manifest_id if manifest_id is not None else os.getenv('MANIFEST_ID')
@@ -68,6 +71,10 @@ class Params:
         if self.log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
             raise ValueError(f"LOG_LEVEL {self.log_level} must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.")
 
+        # Dependencies
+        if not isinstance(self.force_download_dependencies, bool):
+            raise ValueError("FORCE_DOWNLOAD_DEPENDENCIES must be a boolean value (True or False).")
+
         # Steam download
         if not isinstance(self.force_steam_download, bool):
             raise ValueError("FORCE_STEAM_DOWNLOAD must be a boolean value (True or False).")
@@ -107,6 +114,9 @@ class Params:
         if not isinstance(self.force_export, bool):
             raise ValueError("FORCE_EXPORT must be a boolean value (True or False).")
         
+        # Log parameters after all validation
+        logger.debug(f"Force download dependencies: {self.force_download_dependencies}")
+        
     def log(self):
         """
         Logs the parameters.
@@ -133,9 +143,9 @@ class Params:
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None, force_export=None):
+def init_params(log_level=None, force_download_dependencies=None, manifest_id=None, output_data_dir=None, output_mapper_file=None, force_export=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file, force_export=force_export)
+    PARAMS = Params(log_level=log_level, force_download_dependencies=force_download_dependencies, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file, force_export=force_export)
     return PARAMS
 
 def is_truthy(string):
