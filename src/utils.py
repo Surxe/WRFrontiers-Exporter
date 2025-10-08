@@ -146,9 +146,15 @@ class Params:
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, force_download_dependencies=None, manifest_id=None, output_data_dir=None, output_mapper_file=None, force_export=None):
+def init_params(log_level=None, force_download_dependencies=None, manifest_id=None, force_steam_download=None, 
+                steam_username=None, steam_password=None, steam_game_download_path=None, dumper7_output_dir=None,
+                output_mapper_file=None, force_get_mapper=None, output_data_dir=None, force_export=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, force_download_dependencies=force_download_dependencies, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file, force_export=force_export)
+    PARAMS = Params(log_level=log_level, force_download_dependencies=force_download_dependencies, manifest_id=manifest_id,
+                   force_steam_download=force_steam_download, steam_username=steam_username, steam_password=steam_password,
+                   steam_game_download_path=steam_game_download_path, dumper7_output_dir=dumper7_output_dir,
+                   output_mapper_file=output_mapper_file, force_get_mapper=force_get_mapper, 
+                   output_data_dir=output_data_dir, force_export=force_export)
     return PARAMS
 
 def is_truthy(string):
