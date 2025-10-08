@@ -17,9 +17,9 @@ class Params:
     A class to hold parameters for the application.
     """
     def __init__(self, log_level=None,
-                 manifest_id=None, force_download=None, steam_username=None, steam_password=None, steam_game_download_path=None,
+                 manifest_id=None, force_steam_download=None, steam_username=None, steam_password=None, steam_game_download_path=None,
                  dumper7_output_dir=None, 
-                 output_mapper_file=None, output_mapper_force=None, output_data_dir=None):
+                 output_mapper_file=None, force_get_mapper=None, output_data_dir=None):
         
         # Use provided args if not None, else fallback to environment
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
@@ -27,17 +27,17 @@ class Params:
         # Steam download
         self.manifest_id = manifest_id if manifest_id is not None else os.getenv('MANIFEST_ID')
         self.manifest_id = self.manifest_id if self.manifest_id != "" else None  # Treat empty string as None
-        self.force_download = is_truthy(force_download if force_download is not None else (os.getenv('FORCE_DOWNLOAD', 'False').lower() == 'true'))
+        self.force_steam_download = is_truthy(force_steam_download if force_steam_download is not None else (os.getenv('FORCE_STEAM_DOWNLOAD', 'False').lower() == 'true'))
         self.steam_username = steam_username if steam_username is not None else os.getenv('STEAM_USERNAME')
         self.steam_password = steam_password if steam_password is not None else os.getenv('STEAM_PASSWORD')
         self.steam_game_download_path = steam_game_download_path if steam_game_download_path is not None else os.getenv('STEAM_GAME_DOWNLOAD_PATH')
         
         # Mapping
         self.dumper7_output_dir = dumper7_output_dir if dumper7_output_dir is not None else os.getenv('DUMPER7_OUTPUT_DIR')
-
-        # BatchExport
         self.output_mapper_file = output_mapper_file if output_mapper_file is not None else os.getenv('OUTPUT_MAPPER_FILE')
-        self.output_mapper_force = is_truthy(output_mapper_force if output_mapper_force is not None else (os.getenv('OUTPUT_MAPPER_FORCE', 'True').lower() == 'true'))
+        self.force_get_mapper = is_truthy(force_get_mapper if force_get_mapper is not None else (os.getenv('FORCE_GET_MAPPER', 'True').lower() == 'true'))
+        
+        # BatchExport
         self.output_data_dir = output_data_dir if output_data_dir is not None else os.getenv('OUTPUT_DATA_DIR')
         
         # Setup loguru logging to /logs dir
@@ -68,8 +68,8 @@ class Params:
             raise ValueError(f"LOG_LEVEL {self.log_level} must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.")
 
         # Steam download
-        if not isinstance(self.force_download, bool):
-            raise ValueError("FORCE_DOWNLOAD must be a boolean value (True or False).")
+        if not isinstance(self.force_steam_download, bool):
+            raise ValueError("FORCE_STEAM_DOWNLOAD must be a boolean value (True or False).")
 
         if not self.steam_username:
             raise ValueError("STEAM_USERNAME environment variable is not set.")
@@ -88,19 +88,16 @@ class Params:
             raise ValueError("DUMPER7_OUTPUT_DIR environment variable is not set.")
         if not os.path.exists(self.dumper7_output_dir):
             raise ValueError(f"DUMPER7_OUTPUT_DIR '{self.dumper7_output_dir}' does not exist.")
-        
-
-        # BatchExport
         if not self.output_mapper_file:
             raise ValueError("OUTPUT_MAPPER_FILE environment variable is not set.")
         # Just check that its parent dir exists, the file itself will be created
         parent_dir = os.path.dirname(self.output_mapper_file)
         if not os.path.exists(parent_dir):
             raise ValueError(f"Parent directory for OUTPUT_MAPPER_FILE '{self.output_mapper_file}' does not exist.")
-        
-        if not isinstance(self.output_mapper_force, bool):
-            raise ValueError("OUTPUT_MAPPER_FORCE must be a boolean value (True or False).")
+        if not isinstance(self.force_get_mapper, bool):
+            raise ValueError("FORCE_GET_MAPPER must be a boolean value (True or False).")
 
+        # BatchExport
         if not self.output_data_dir:
             raise ValueError("OUTPUT_DATA_DIR environment variable is not set.")
         if not os.path.exists(self.output_data_dir):
@@ -115,15 +112,15 @@ class Params:
             f"LOG_LEVEL: {self.log_level}\n"
             
             f"MANIFEST_ID: {self.manifest_id}\n"
-            f"FORCE_DOWNLOAD: {self.force_download}\n"
+            f"FORCE_STEAM_DOWNLOAD: {self.force_steam_download}\n"
             f"STEAM_USERNAME: {self.steam_username}\n"
             #f"STEAM_PASSWORD: {self.steam_password}\n"
             f"STEAM_GAME_DOWNLOAD_PATH: {self.steam_game_download_path}\n"
             
             f"DUMPER7_OUTPUT_DIR: {self.dumper7_output_dir}\n"
-
             f"OUTPUT_MAPPER_FILE: {self.output_mapper_file}\n"
-            f"OUTPUT_MAPPER_FORCE: {self.output_mapper_force}\n"
+            f"FORCE_GET_MAPPER: {self.force_get_mapper}\n"
+
             f"OUTPUT_DATA_DIR: {self.output_data_dir}\n"
         )
 

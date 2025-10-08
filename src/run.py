@@ -91,7 +91,7 @@ def run_steam_download_update(params):
             wrf_dir=params.steam_game_download_path,
             steam_username=params.steam_username,
             steam_password=params.steam_password,
-            force=params.force_download,
+            force=params.force_steam_download,
         )
         result = downloader.run(manifest_id=params.manifest_id)
         

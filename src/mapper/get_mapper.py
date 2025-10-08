@@ -206,8 +206,8 @@ def main(params=None):
         raise ValueError("Params must be provided")
 
     # Check if mapper file already exists and force is False
-    if os.path.exists(params.output_mapper_file) and not params.output_mapper_force:
-        logger.info(f"Mapper file already exists at {params.output_mapper_file} and OUTPUT_MAPPER_FORCE is False. Skipping mapper creation.")
+    if os.path.exists(params.output_mapper_file) and not params.force_get_mapper:
+        logger.info(f"Mapper file already exists at {params.output_mapper_file} and FORCE_GET_MAPPER is False. Skipping mapper creation.")
         return params.output_mapper_file
 
     # Construct shipping executable path from steam download path

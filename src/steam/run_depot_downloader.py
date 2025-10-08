@@ -111,5 +111,5 @@ if __name__ == '__main__':
         wrf_dir=params.steam_game_download_path,
         steam_username=params.steam_username,
         steam_password=params.steam_password,
-        force=params.force_download,
+        force=params.force_steam_download,
     ).run(manifest_id=params.manifest_id)
