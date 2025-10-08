@@ -19,7 +19,7 @@ class Params:
     def __init__(self, log_level=None,
                  manifest_id=None, force_steam_download=None, steam_username=None, steam_password=None, steam_game_download_path=None,
                  dumper7_output_dir=None, 
-                 output_mapper_file=None, force_get_mapper=None, output_data_dir=None):
+                 output_mapper_file=None, force_get_mapper=None, output_data_dir=None, force_export=None):
         
         # Use provided args if not None, else fallback to environment
         self.log_level = (log_level if log_level is not None else os.getenv('LOG_LEVEL', 'DEBUG')).upper()
@@ -39,6 +39,7 @@ class Params:
         
         # BatchExport
         self.output_data_dir = output_data_dir if output_data_dir is not None else os.getenv('OUTPUT_DATA_DIR')
+        self.force_export = is_truthy(force_export if force_export is not None else (os.getenv('FORCE_EXPORT', 'True').lower() == 'true'))
         
         # Setup loguru logging to /logs dir
         logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')
@@ -103,6 +104,9 @@ class Params:
         if not os.path.exists(self.output_data_dir):
             raise ValueError(f"OUTPUT_DATA_DIR '{self.output_data_dir}' does not exist.")
         
+        if not isinstance(self.force_export, bool):
+            raise ValueError("FORCE_EXPORT must be a boolean value (True or False).")
+        
     def log(self):
         """
         Logs the parameters.
@@ -122,15 +126,16 @@ class Params:
             f"FORCE_GET_MAPPER: {self.force_get_mapper}\n"
 
             f"OUTPUT_DATA_DIR: {self.output_data_dir}\n"
+            f"FORCE_EXPORT: {self.force_export}\n"
         )
 
     def __str__(self):
         return f"Params(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize PARAMS with direct args if available
-def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None):
+def init_params(log_level=None, manifest_id=None, output_data_dir=None, output_mapper_file=None, force_export=None):
     global PARAMS
-    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file)
+    PARAMS = Params(log_level=log_level, manifest_id=manifest_id, output_data_dir=output_data_dir, output_mapper_file=output_mapper_file, force_export=force_export)
     return PARAMS
 
 def is_truthy(string):
