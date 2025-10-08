@@ -108,8 +108,11 @@ class Params:
         # BatchExport
         if not self.output_data_dir:
             raise ValueError("OUTPUT_DATA_DIR environment variable is not set.")
-        if not os.path.exists(self.output_data_dir):
-            raise ValueError(f"OUTPUT_DATA_DIR '{self.output_data_dir}' does not exist.")
+        
+        # Validate parent directories exist for output_data_dir
+        parent_dir = os.path.dirname(self.output_data_dir)
+        if parent_dir and not os.path.exists(parent_dir):
+            raise ValueError(f"Parent directory for OUTPUT_DATA_DIR does not exist: {parent_dir}")
         
         if not isinstance(self.force_export, bool):
             raise ValueError("FORCE_EXPORT must be a boolean value (True or False).")
