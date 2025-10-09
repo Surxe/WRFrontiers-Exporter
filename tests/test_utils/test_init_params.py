@@ -186,6 +186,7 @@ class TestInitParams(unittest.TestCase):
         # Check that global PARAMS is set
         self.assertEqual(src_utils.PARAMS, params)
 
+    @patch.dict(os.environ, {}, clear=True)  # Clear environment to test pure defaults
     def test_init_params_with_none_values(self):
         """Test init_params handles None values correctly."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
@@ -206,9 +207,10 @@ class TestInitParams(unittest.TestCase):
         # None values should trigger fallback to environment/defaults
         self.assertEqual(params.log_level, "DEBUG")  # Default
         self.assertEqual(params.steam_username, "test")
-        self.assertFalse(params.force_export)  # Default False (env var 'False' in test)
+        self.assertTrue(params.force_export)  # Default True (no env var override in test)
         self.assertFalse(params.skip_dependencies)  # Default False
 
+    @patch.dict(os.environ, {}, clear=True)  # Clear environment to test pure defaults
     def test_init_params_partial_arguments(self):
         """Test init_params with only some arguments provided."""
         params = init_params(
@@ -227,7 +229,7 @@ class TestInitParams(unittest.TestCase):
         
         # Unprovided arguments should use defaults
         self.assertFalse(params.force_download_dependencies)  # Default False
-        self.assertFalse(params.force_get_mapper)  # Default False (env var 'False' in test)
+        self.assertTrue(params.force_get_mapper)  # Default True (no env var override in test)
         self.assertFalse(params.skip_dependencies)  # Default False
 
 
