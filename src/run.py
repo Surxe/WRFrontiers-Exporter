@@ -322,14 +322,14 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
                 return False
         else:
             logger.info("Skipping mapper creation step...")
-            # If skipping mapper creation, use the expected output path
+        
+        # Step 4: BatchExport
+        if not skip_batch_export:
+            # If skipped mapper creation, use the expected output path
             mapper_file_path = params.output_mapper_file
             if not os.path.exists(mapper_file_path):
                 logger.error(f"Mapper file not found at {mapper_file_path}. Cannot skip mapper creation.")
                 return False
-        
-        # Step 4: BatchExport
-        if not skip_batch_export:
             if not run_batch_export(params, mapper_file_path):
                 logger.error("BatchExport failed.")
                 return False
