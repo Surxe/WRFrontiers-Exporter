@@ -369,22 +369,13 @@ if __name__ == "__main__":
         description="WRFrontiers-Exporter - Complete game data extraction pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  python run.py                                                    # Run all steps with default/env values
-  python run.py --log-level INFO                                   # Set log level
-  python run.py --manifest-id 1234567890 --force-steam-download   # Download specific manifest version
-  python run.py --steam-username user --steam-password pass       # Override Steam credentials
-  python run.py --force-download-dependencies --force-export      # Force all downloads and exports
-  
-  # Skip specific steps:
-  python run.py --skip-dependencies                               # Skip dependency check/update
-  python run.py --skip-steam-update                               # Skip steam game download/update
-  python run.py --skip-mapper                                     # Skip mapper file creation
-  python run.py --skip-batch-export                               # Skip batch export to JSON
-  
-  # Run only specific steps:
-  python run.py --skip-dependencies --skip-steam-update          # Only mapper + export
-  python run.py --skip-mapper --skip-batch-export                # Only deps + steam
+For detailed documentation including all command line arguments, configuration options,
+and troubleshooting information, please see the README.md file.
+
+Quick Examples:
+  python run.py                              # Run all steps with default values
+  python run.py --skip-dependencies         # Skip dependency check/update
+  python run.py --log-level INFO            # Set log level to INFO
         """
     )
     
