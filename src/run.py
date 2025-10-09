@@ -251,7 +251,8 @@ def validate_environment(params):
 
 def main(log_level=None, force_download_dependencies=None, manifest_id=None, force_steam_download=None, 
          steam_username=None, steam_password=None, steam_game_download_path=None, dumper7_output_dir=None,
-         output_mapper_file=None, force_get_mapper=None, output_data_dir=None, force_export=None):
+         output_mapper_file=None, force_get_mapper=None, output_data_dir=None, force_export=None,
+         skip_dependencies=False, skip_steam_update=False, skip_mapper=False, skip_batch_export=False):
     """
     Main function to run the complete WRFrontiers-Exporter process.
     
@@ -268,6 +269,10 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
         force_get_mapper (bool): Force regeneration of mapper file
         output_data_dir (str): Path where the output JSON will be saved
         force_export (bool): Force re-export of game data
+        skip_dependencies (bool): Skip dependency manager step
+        skip_steam_update (bool): Skip steam download/update step
+        skip_mapper (bool): Skip mapper creation step
+        skip_batch_export (bool): Skip batch export step
         
     Returns:
         bool: True if all steps completed successfully, False otherwise
@@ -293,25 +298,43 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
             return False
         
         # Step 1: Dependency Manager
-        if not run_dependency_manager(params):
-            logger.error("Dependency manager failed. Cannot continue.")
-            return False
+        if not skip_dependencies:
+            if not run_dependency_manager(params):
+                logger.error("Dependency manager failed. Cannot continue.")
+                return False
+        else:
+            logger.info("Skipping dependency manager step...")
         
         # Step 2: Steam Download/Update
-        if not run_steam_download_update(params):
-            logger.error("Steam download/update failed. Cannot continue.")
-            return False
+        if not skip_steam_update:
+            if not run_steam_download_update(params):
+                logger.error("Steam download/update failed. Cannot continue.")
+                return False
+        else:
+            logger.info("Skipping steam download/update step...")
         
         # Step 3: Mapper Creation
-        mapper_file_path = run_mapper_creation(params)
-        if not mapper_file_path:
-            logger.error("Mapper creation failed. Cannot continue.")
-            return False
+        mapper_file_path = None
+        if not skip_mapper:
+            mapper_file_path = run_mapper_creation(params)
+            if not mapper_file_path:
+                logger.error("Mapper creation failed. Cannot continue.")
+                return False
+        else:
+            logger.info("Skipping mapper creation step...")
+            # If skipping mapper creation, use the expected output path
+            mapper_file_path = params.output_mapper_file
+            if not os.path.exists(mapper_file_path):
+                logger.error(f"Mapper file not found at {mapper_file_path}. Cannot skip mapper creation.")
+                return False
         
         # Step 4: BatchExport
-        if not run_batch_export(params, mapper_file_path):
-            logger.error("BatchExport failed.")
-            return False
+        if not skip_batch_export:
+            if not run_batch_export(params, mapper_file_path):
+                logger.error("BatchExport failed.")
+                return False
+        else:
+            logger.info("Skipping batch export step...")
         
         # Success!
         overall_end_time = time.time()
@@ -347,11 +370,21 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run.py                                                    # Run with default/env values
+  python run.py                                                    # Run all steps with default/env values
   python run.py --log-level INFO                                   # Set log level
   python run.py --manifest-id 1234567890 --force-steam-download   # Download specific manifest version
   python run.py --steam-username user --steam-password pass       # Override Steam credentials
   python run.py --force-download-dependencies --force-export      # Force all downloads and exports
+  
+  # Skip specific steps:
+  python run.py --skip-dependencies                               # Skip dependency check/update
+  python run.py --skip-steam-update                               # Skip steam game download/update
+  python run.py --skip-mapper                                     # Skip mapper file creation
+  python run.py --skip-batch-export                               # Skip batch export to JSON
+  
+  # Run only specific steps:
+  python run.py --skip-dependencies --skip-steam-update          # Only mapper + export
+  python run.py --skip-mapper --skip-batch-export                # Only deps + steam
         """
     )
     
@@ -409,6 +442,28 @@ Examples:
         help="Force re-export of game data even if output exists"
     )
     
+    # Skip options for specific stages
+    parser.add_argument(
+        "--skip-dependencies", 
+        action="store_true", 
+        help="Skip dependency manager step"
+    )
+    parser.add_argument(
+        "--skip-steam-update", 
+        action="store_true", 
+        help="Skip steam download/update step"
+    )
+    parser.add_argument(
+        "--skip-mapper", 
+        action="store_true", 
+        help="Skip mapper creation step"
+    )
+    parser.add_argument(
+        "--skip-batch-export", 
+        action="store_true", 
+        help="Skip batch export step"
+    )
+    
     args = parser.parse_args()
     
     # Run the main process with parsed arguments
@@ -424,7 +479,11 @@ Examples:
         output_mapper_file=args.output_mapper_file,
         force_get_mapper=args.force_get_mapper,
         output_data_dir=args.output_data_dir,
-        force_export=args.force_export
+        force_export=args.force_export,
+        skip_dependencies=args.skip_dependencies,
+        skip_steam_update=args.skip_steam_update,
+        skip_mapper=args.skip_mapper,
+        skip_batch_export=args.skip_batch_export
     )
     
     # Exit with appropriate code
