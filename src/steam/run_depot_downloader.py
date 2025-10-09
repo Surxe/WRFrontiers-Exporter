@@ -101,7 +101,6 @@ class DepotDownloader:
             f.write(manifest_id)
 
 if __name__ == '__main__':
-    Params()
     params = init_params()
 
     if params is None:

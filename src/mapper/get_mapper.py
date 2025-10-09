@@ -280,6 +280,5 @@ def main(params=None):
     return params.output_mapper_file
 
 if __name__ == '__main__':
-    Params()
     params = init_params()
     main(params)
