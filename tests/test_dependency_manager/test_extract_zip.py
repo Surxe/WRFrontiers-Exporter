@@ -6,11 +6,18 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-# Import from the src directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
-from dependency_manager import DependencyManager
+# Add the src directory to the Python path to import dependency_manager
+src_path = os.path.join(os.path.dirname(__file__), '..', '..', 'src')
+sys.path.insert(0, src_path)
+
+# Import directly from the src.dependency_manager module to avoid conflicts
+import importlib.util
+spec = importlib.util.spec_from_file_location("src_dependency_manager", os.path.join(src_path, "dependency_manager.py"))
+src_dependency_manager = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(src_dependency_manager)
+
+DependencyManager = src_dependency_manager.DependencyManager
 
 
 class TestExtractZip(unittest.TestCase):
@@ -47,7 +54,7 @@ class TestExtractZip(unittest.TestCase):
         files = {'readme.txt': 'Hello World', 'config.json': '{"version": "1.0"}'}
         self._create_test_zip(self.zip_path, files)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Verify files were extracted
@@ -71,7 +78,7 @@ class TestExtractZip(unittest.TestCase):
         }
         self._create_test_zip(self.zip_path, files)
         
-        with patch('dependency_manager.logger'):
+        with patch.object(src_dependency_manager, 'logger'):
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Verify directory structure was preserved
@@ -89,7 +96,7 @@ class TestExtractZip(unittest.TestCase):
         files = {'file1.txt': 'Content 1', 'file2.txt': 'Content 2', 'nested/file3.txt': 'Content 3'}
         self._create_test_zip(self.zip_path, files, use_subdirectory=True)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Files should be moved to root level (flattened from the main subdir)
@@ -104,7 +111,7 @@ class TestExtractZip(unittest.TestCase):
         files = {f'file_{i}.txt': f'Content {i}' for i in range(5)}
         self._create_test_zip(self.zip_path, files)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Check debug logging for archive contents
@@ -122,7 +129,7 @@ class TestExtractZip(unittest.TestCase):
         files = {f'file_{i:03d}.txt': f'Content {i}' for i in range(15)}
         self._create_test_zip(self.zip_path, files)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Check that logging was truncated
@@ -135,7 +142,7 @@ class TestExtractZip(unittest.TestCase):
         """Test extraction of an empty ZIP archive."""
         self._create_test_zip(self.zip_path, {})  # Empty ZIP
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Should complete without error
@@ -173,7 +180,7 @@ class TestExtractZip(unittest.TestCase):
         self._create_test_zip(self.zip_path, files)
         
         with patch.object(self.dm, '_flatten_extraction') as mock_flatten:
-            with patch('dependency_manager.logger'):
+            with patch.object(src_dependency_manager, 'logger'):
                 self.dm._extract_zip(self.zip_path, self.output_path)
                 
                 mock_flatten.assert_called_once_with(self.output_path)
@@ -183,7 +190,7 @@ class TestExtractZip(unittest.TestCase):
         files = {f'file_{i:02d}.txt': f'Content {i}' for i in range(10)}
         self._create_test_zip(self.zip_path, files)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Should log all 10 files without truncation
@@ -206,7 +213,7 @@ class TestExtractZip(unittest.TestCase):
                 else:
                     zf.writestr(filename, content.encode('utf-8'))
         
-        with patch('dependency_manager.logger'):
+        with patch.object(src_dependency_manager, 'logger'):
             self.dm._extract_zip(self.zip_path, self.output_path)
             
             # Verify all files exist
@@ -217,7 +224,7 @@ class TestExtractZip(unittest.TestCase):
             # Verify text file content
             self.assertEqual((self.output_path / 'data.txt').read_text(), 'Plain text content')
 
-    @patch('dependency_manager.logger')
+    @patch.object(src_dependency_manager, 'logger')
     def test_extract_zip_logs_extraction_summary(self, mock_logger):
         """Test that _extract_zip logs extraction summary with file count and path."""
         files = {'file1.txt': 'content1', 'file2.txt': 'content2', 'dir/file3.txt': 'content3'}

@@ -4,11 +4,18 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-# Import from the src directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
-from dependency_manager import DependencyManager
+# Add the src directory to the Python path to import dependency_manager
+src_path = os.path.join(os.path.dirname(__file__), '..', '..', 'src')
+sys.path.insert(0, src_path)
+
+# Import directly from the src.dependency_manager module to avoid conflicts
+import importlib.util
+spec = importlib.util.spec_from_file_location("src_dependency_manager", os.path.join(src_path, "dependency_manager.py"))
+src_dependency_manager = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(src_dependency_manager)
+
+DependencyManager = src_dependency_manager.DependencyManager
 
 
 class TestGetInstalledVersion(unittest.TestCase):
@@ -73,7 +80,7 @@ class TestGetInstalledVersion(unittest.TestCase):
         self.version_file.write_text("v1.0.0")
         
         with patch.object(Path, 'read_text', side_effect=PermissionError("Access denied")):
-            with patch('dependency_manager.logger') as mock_logger:
+            with patch.object(src_dependency_manager, 'logger') as mock_logger:
                 result = self.dm._get_installed_version(self.test_path)
                 
                 self.assertIsNone(result)
@@ -101,7 +108,7 @@ class TestGetInstalledVersion(unittest.TestCase):
         
         self.assertEqual(result, test_version)
 
-    @patch('dependency_manager.logger')
+    @patch.object(src_dependency_manager, 'logger')
     def test_get_installed_version_logs_warning_on_exception(self, mock_logger):
         """Test that _get_installed_version logs appropriate warning on exception."""
         # Create version file

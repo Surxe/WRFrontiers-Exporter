@@ -5,11 +5,18 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-# Import from the src directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
-from dependency_manager import DependencyManager
+# Add the src directory to the Python path to import dependency_manager
+src_path = os.path.join(os.path.dirname(__file__), '..', '..', 'src')
+sys.path.insert(0, src_path)
+
+# Import directly from the src.dependency_manager module to avoid conflicts
+import importlib.util
+spec = importlib.util.spec_from_file_location("src_dependency_manager", os.path.join(src_path, "dependency_manager.py"))
+src_dependency_manager = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(src_dependency_manager)
+
+DependencyManager = src_dependency_manager.DependencyManager
 
 
 class TestVerifyExecutable(unittest.TestCase):
@@ -45,7 +52,7 @@ class TestVerifyExecutable(unittest.TestCase):
         executable_path = self.output_path / executable_name
         self._create_test_executable(executable_path, size_bytes=1024)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             # Should complete without exception
             self.dm._verify_executable(self.output_path, executable_name)
             
@@ -75,7 +82,7 @@ class TestVerifyExecutable(unittest.TestCase):
         
         expected_root_path = self.output_path / executable_name
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._verify_executable(self.output_path, executable_name)
             
             # Verify executable was moved to root
@@ -105,7 +112,7 @@ class TestVerifyExecutable(unittest.TestCase):
         
         expected_root_path = self.output_path / executable_name
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._verify_executable(self.output_path, executable_name)
             
             # Verify executable was moved to root
@@ -133,7 +140,7 @@ class TestVerifyExecutable(unittest.TestCase):
         self._create_test_executable(exec1_path, "First executable")
         self._create_test_executable(exec2_path, "Second executable")
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._verify_executable(self.output_path, executable_name)
             
             # One should be moved to root (whichever rglob finds first)
@@ -162,7 +169,7 @@ class TestVerifyExecutable(unittest.TestCase):
         original_mode = executable_path.stat().st_mode & 0o777
         self.assertEqual(original_mode, 0o644)
         
-        with patch('dependency_manager.logger'):
+        with patch.object(src_dependency_manager, 'logger'):
             self.dm._verify_executable(self.output_path, executable_name)
             
             # Verify permissions were set to executable
@@ -176,7 +183,7 @@ class TestVerifyExecutable(unittest.TestCase):
         test_size = 4096
         self._create_test_executable(executable_path, size_bytes=test_size)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._verify_executable(self.output_path, executable_name)
             
             # Check that size was logged correctly
@@ -215,7 +222,7 @@ class TestVerifyExecutable(unittest.TestCase):
         executable_path = subdir / executable_name
         self._create_test_executable(executable_path)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             # Search with exact case should work
             self.dm._verify_executable(self.output_path, executable_name)
             
@@ -253,7 +260,7 @@ class TestVerifyExecutable(unittest.TestCase):
         sub_executable = subdir / executable_name
         self._create_test_executable(sub_executable, "Subdirectory content")
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             self.dm._verify_executable(self.output_path, executable_name)
             
             # Root executable should still exist (found first, no move needed)
@@ -265,7 +272,7 @@ class TestVerifyExecutable(unittest.TestCase):
             verify_log = next((call for call in info_calls if "Verified executable" in call), None)
             self.assertIsNotNone(verify_log)
 
-    @patch('dependency_manager.logger')
+    @patch.object(src_dependency_manager, 'logger')
     def test_verify_executable_logs_verification_success(self, mock_logger):
         """Test that _verify_executable logs successful verification."""
         executable_name = "success.exe"

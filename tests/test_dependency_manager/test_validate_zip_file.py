@@ -5,11 +5,18 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-# Import from the src directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src')))
-from dependency_manager import DependencyManager
+# Add the src directory to the Python path to import dependency_manager
+src_path = os.path.join(os.path.dirname(__file__), '..', '..', 'src')
+sys.path.insert(0, src_path)
+
+# Import directly from the src.dependency_manager module to avoid conflicts
+import importlib.util
+spec = importlib.util.spec_from_file_location("src_dependency_manager", os.path.join(src_path, "dependency_manager.py"))
+src_dependency_manager = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(src_dependency_manager)
+
+DependencyManager = src_dependency_manager.DependencyManager
 
 
 class TestValidateZipFile(unittest.TestCase):
@@ -53,7 +60,7 @@ class TestValidateZipFile(unittest.TestCase):
         zip_path = self.test_path / "test.zip"
         self._create_valid_zip(zip_path)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertTrue(result)
@@ -72,7 +79,7 @@ class TestValidateZipFile(unittest.TestCase):
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_STORED) as zf:
             zf.writestr(".placeholder", "x" * 1200)  # Add minimal file to ensure size
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertTrue(result)  # ZIP should be valid
@@ -87,7 +94,7 @@ class TestValidateZipFile(unittest.TestCase):
         invalid_content = "This is not a ZIP file. " * 50  # Over 1000 bytes
         zip_path.write_text(invalid_content)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertFalse(result)
@@ -108,7 +115,7 @@ class TestValidateZipFile(unittest.TestCase):
             f.seek(new_size)
             f.truncate()
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertFalse(result)
@@ -119,7 +126,7 @@ class TestValidateZipFile(unittest.TestCase):
         zip_path = self.test_path / "tiny.zip"
         zip_path.write_text("small")  # Only 5 bytes, less than 1000 byte threshold
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertFalse(result)
@@ -137,7 +144,7 @@ class TestValidateZipFile(unittest.TestCase):
         file_size = zip_path.stat().st_size
         self.assertGreaterEqual(file_size, 1000)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertTrue(result)
@@ -151,7 +158,7 @@ class TestValidateZipFile(unittest.TestCase):
         zip_path = self.test_path / "nonexistent.zip"
         # Don't create the file - stat() will fail
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertFalse(result)
@@ -168,7 +175,7 @@ class TestValidateZipFile(unittest.TestCase):
         # Mock ZipFile to raise a generic exception
         mock_zipfile.side_effect = IOError("Disk full")
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertFalse(result)
@@ -184,7 +191,7 @@ class TestValidateZipFile(unittest.TestCase):
         files = {f"file_{i}.txt": f"Content {i}" for i in range(50)}
         self._create_valid_zip(zip_path, files)
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertTrue(result)
@@ -200,7 +207,7 @@ class TestValidateZipFile(unittest.TestCase):
         
         actual_size = zip_path.stat().st_size
         
-        with patch('dependency_manager.logger') as mock_logger:
+        with patch.object(src_dependency_manager, 'logger') as mock_logger:
             result = self.dm._validate_zip_file(zip_path)
             
             self.assertTrue(result)
@@ -210,7 +217,7 @@ class TestValidateZipFile(unittest.TestCase):
             self.assertIsNotNone(size_log)
             self.assertIn(f"({actual_size} bytes)", size_log)
 
-    @patch('dependency_manager.logger')
+    @patch.object(src_dependency_manager, 'logger')
     def test_validate_zip_file_logs_debug_info(self, mock_logger):
         """Test that _validate_zip_file logs appropriate debug information."""
         zip_path = self.test_path / "debug_test.zip"
