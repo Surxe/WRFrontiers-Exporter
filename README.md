@@ -200,30 +200,6 @@ python src/run.py --skip-dependencies --skip-steam-update    # Only mapper + exp
 python src/run.py --skip-mapper --skip-batch-export          # Only deps + steam
 ```
 
-## Command Line Arguments
-
-### Configuration Parameters
-- `--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}` - Set the log level
-- `--manifest-id MANIFEST_ID` - Specific Steam manifest ID to download (leave empty for latest)
-- `--steam-username USERNAME` - Steam username for DepotDownloader authentication
-- `--steam-password PASSWORD` - Steam password for DepotDownloader authentication
-- `--steam-game-download-path PATH` - Path where the game will be downloaded by DepotDownloader
-- `--dumper7-output-dir PATH` - Path to Dumper-7's output folder
-- `--output-mapper-file PATH` - Where the generated mapper file will be saved
-- `--output-data-dir PATH` - Path where the output JSON will be saved
-
-### Force Options
-- `--force-download-dependencies` - Force re-download of dependencies even if same version exists
-- `--force-steam-download` - Force re-download of Steam files even if same manifest exists
-- `--force-get-mapper` - Force regeneration of mapper file even if it exists
-- `--force-export` - Force re-export of game data even if output exists
-
-### Skip Options
-- `--skip-dependencies` - Skip dependency manager step
-- `--skip-steam-update` - Skip steam download/update step
-- `--skip-mapper` - Skip mapper creation step
-- `--skip-batch-export` - Skip batch export step
-
 ## Requirements
 
 - Python 3.7+
