@@ -61,7 +61,6 @@ cd C:/path/to/repository
 python src/run.py --help
 ```
 
-
 ## Configuration
 
 ### Command Line Argument Usage
@@ -78,14 +77,14 @@ python src/run.py --log-level INFO      # Run all steps with default/env values,
 Copy `.env.example` to `.env` and configure the following parameters, unless they will be provided as arguments at runtime:
 
 <!-- BEGIN_GENERATED_PARAMS -->
-### Logging
+#### Logging
 
 - **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
   - Default: `"DEBUG"`
   - Command line: `--log-level`
 
 
-### Dependencies
+#### Dependencies
 
 - **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
   - Default: `"true"`
@@ -96,7 +95,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--force-download-dependencies`
 
 
-### Steam Download
+#### Steam Download
 
 - **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
   - Default: `"true"`
@@ -124,7 +123,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--steam-game-download-path`
 
 
-### Mapping
+#### Mapping
 
 - **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
   - Default: `"true"`
@@ -144,7 +143,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--output-mapper-file`
 
 
-### Batch Export
+#### Batch Export
 
 - **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
   - Default: `"true"`

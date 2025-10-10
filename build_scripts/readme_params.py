@@ -38,7 +38,7 @@ def generate_by_process_section():
     # Generate documentation for each section
     for section, params in sections_data.items():
         lines.extend([
-            f"### {section}",
+            f"#### {section}",
             "",
         ])
         for param_name, details, is_section_param in params:
@@ -143,7 +143,7 @@ def validate_generated_docs():
             
             # Check for expected content
             if filename == "readme_parameters_section.md":
-                if "### Logging" not in content:
+                if "#### Logging" not in content:
                     print(f"Warning: {filename} missing expected sections")
                     return False
             
