@@ -163,19 +163,19 @@ class ArgumentWriter:
             help_text = details.get("help", "") + f" (default: {default})"
             
             if arg_type == bool:
-                parser.add_argument(arg_name, action='store_true', help=help_text)
+                parser.add_argument(arg_name, action='store_true', default=None, help=help_text)
                 logger.debug(f"Added boolean argument {arg_name} with action 'store_true'")
             elif get_origin(arg_type) is Literal:
                 # Handle Literal types by extracting the choices
                 choices = list(get_args(arg_type))
-                parser.add_argument(arg_name, choices=choices, default=default, help=help_text)
+                parser.add_argument(arg_name, choices=choices, default=None, help=help_text)
                 logger.debug(f"Added choice argument {arg_name} with choices {choices} and default {default}")
             elif arg_type == Path:
                 # Handle Path types
-                parser.add_argument(arg_name, type=str, default=default, help=help_text)
+                parser.add_argument(arg_name, type=str, default=None, help=help_text)
                 logger.debug(f"Added path argument {arg_name} with default {default}")
             else:
-                parser.add_argument(arg_name, type=arg_type, default=default, help=help_text)
+                parser.add_argument(arg_name, type=arg_type, default=None, help=help_text)
                 logger.debug(f"Added argument {arg_name} with type {arg_type} and default {default}")
 
             # Add section params if any
@@ -228,19 +228,26 @@ class Params:
 
     def _process_schema(self, schema, args_dict):
         """Process the parameter schema and set instance attributes."""
+
+        print("Processing schema with args_dict:", args_dict)
+
         def process_param(param_name, details):
             # Convert arg name to attribute name (remove -- and convert - to _)
             attr_name = details["arg"].lstrip('--').replace('-', '_')
             
             # Get value in order of priority: args -> env -> default
             value = None
-            
+
+            logger.debug(f"Processing parameter: {param_name} (attr: {attr_name})")
+
             # 1. Check args first
             if attr_name in args_dict and args_dict[attr_name] is not None:
                 value = args_dict[attr_name]
+                logger.debug(f"Argument {attr_name} found in args with value: {value}")
             # 2. Check environment variable
             elif details["env"] in os.environ:
                 env_value = os.environ[details["env"]]
+                logger.debug(f"Environment variable {details['env']} found with value: {env_value}")
                 # Convert environment string to proper type
                 if details["type"] == bool:
                     value = is_truthy(env_value)
