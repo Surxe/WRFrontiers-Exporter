@@ -281,11 +281,11 @@ class TestWaitForProcessReadyForInjection(unittest.TestCase):
         
         # Check function signature
         sig = inspect.signature(wait_for_process_ready_for_injection)
-        options = list(sig.options.keys())
+        options = list(sig.parameters.keys())
         self.assertEqual(options, ['process_name', 'initialization_time'])
         
         # Check default option value
-        self.assertEqual(sig.options['initialization_time'].default, 30)
+        self.assertEqual(sig.parameters['initialization_time'].default, 30)
         
         # Check that it has a docstring
         self.assertIsNotNone(wait_for_process_ready_for_injection.__doc__)

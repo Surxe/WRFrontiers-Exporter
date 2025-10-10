@@ -352,7 +352,7 @@ class TestTerminateProcessByName(unittest.TestCase):
         
         # Check function signature
         sig = inspect.signature(terminate_process_by_name)
-        options = list(sig.options.keys())
+        options = list(sig.parameters.keys())
         self.assertEqual(options, ['process_name'])
         
         # Check that it has a docstring
