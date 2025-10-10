@@ -5,7 +5,8 @@ import time
 from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils import init_params, Params, run_process
+from params import init_params
+from utils import run_process
 from loguru import logger
 
 """

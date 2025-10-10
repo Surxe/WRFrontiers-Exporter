@@ -15,12 +15,11 @@ Usage:
 import sys
 import os
 import time
-from pathlib import Path
 
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils import init_params
+from params import init_params
 from loguru import logger
 import traceback
 from dependency_manager import main as dependency_main

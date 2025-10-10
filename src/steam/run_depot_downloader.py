@@ -1,7 +1,8 @@
 import os
 import shutil
 from loguru import logger
-from utils import run_process, init_params, Params
+from params import init_params
+from utils import run_process
 
 APP_ID = '1491000'  # war robots: frontier's app_id
 DEPOT_ID = '1491005'  # the big depot

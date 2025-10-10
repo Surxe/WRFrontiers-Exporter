@@ -5,7 +5,8 @@ import time
 import shutil
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils import init_params, Params, clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
+from params import init_params
+from utils import clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
 from mapper.simple_injector import inject_dll_into_process
 from loguru import logger
 import subprocess
@@ -31,7 +32,6 @@ def get_mapping_file_path(params=None):
         str: Path to the mapping file (preferably at the output location)
     """
     if params is None:
-        from utils import init_params
         params = init_params()
     
     return main(params)
