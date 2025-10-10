@@ -58,7 +58,7 @@ def add_parameter_doc_to_lines(lines, param_name, details, is_section_param=Fals
     
     # Convert default value to readable string
     if default is None:
-        default_str = "required if section enabled"
+        default_str = "None - required if section enabled"
     elif isinstance(default, bool):
         default_str = f'`"{str(default).lower()}"`'
     elif isinstance(default, str):

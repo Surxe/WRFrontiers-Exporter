@@ -86,7 +86,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 #### Dependencies
 
 - **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
-  - Default: `"true"`
+  - Default: `"false"`
   - Command line: `--should-download-dependencies`
 
 * **FORCE_DOWNLOAD_DEPENDENCIES** - Re-download dependencies even if they are already present.
@@ -97,7 +97,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 #### Steam Download
 
 - **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
-  - Default: `"true"`
+  - Default: `"false"`
   - Command line: `--should-download-steam-game`
 
 * **FORCE_STEAM_DOWNLOAD** - Re-download/update Steam game files even if they are already present.
@@ -110,22 +110,22 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - See [SteamDB](https://steamdb.info/app/1491000/depot/1491005/manifests/) for available values
 
 * **STEAM_USERNAME** - Steam username for authentication.
-  - Default: None
+  - Default: None - required if section enabled
   - Command line: `--steam-username`
 
 * **STEAM_PASSWORD** - Steam password for authentication.
-  - Default: None
+  - Default: None - required if section enabled
   - Command line: `--steam-password`
 
 * **STEAM_GAME_DOWNLOAD_PATH** - Path to the local Steam game installation directory.
-  - Default: None
+  - Default: None - required if section enabled
   - Command line: `--steam-game-download-path`
 
 
 #### Mapping
 
 - **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
-  - Default: `"true"`
+  - Default: `"false"`
   - Command line: `--should-get-mapper`
 
 * **FORCE_GET_MAPPER** - Re-generate the mapping file even if it already exists.
@@ -133,19 +133,19 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--force-get-mapper`
 
 * **DUMPER7_OUTPUT_DIR** - Path to the where Dumper7 outputs its generated SDK.
-  - Default: None
+  - Default: None - required if section enabled
   - Command line: `--dumper7-output-dir`
   - If unsure where this is, it is likely C:/Dumper-7. Confirm by running the mapper, letting it fail, and checking for the dir.
 
 * **OUTPUT_MAPPER_FILE** - Path to save the generated mapping file (.usmap) at. Should end in .usmap
-  - Default: None
+  - Default: None - required if section enabled
   - Command line: `--output-mapper-file`
 
 
 #### Batch Export
 
 - **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
-  - Default: `"true"`
+  - Default: `"false"`
   - Command line: `--should-batch-export`
 
 * **FORCE_EXPORT** - Re-run the BatchExport even if output directory is not empty.
@@ -153,8 +153,10 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--force-export`
 
 * **OUTPUT_DATA_DIR** - Path to save the exported assets to.
-  - Default: None
+  - Default: None - required if section enabled
   - Command line: `--output-data-dir`
+
+
 <!-- END_GENERATED_PARAMS -->
 ### Miscellaneous Option Behavior
 
