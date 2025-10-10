@@ -75,10 +75,12 @@ class Options:
         # Process the schema to set all attributes
         options = self._process_schema(OPTIONS_SCHEMA, args_dict)
 
-        # Set attributes dynamically
+        # Set attributes dynamically using lowercase underscore format
         for key, value in options.items():
-            setattr(self, key, value)
-            logger.debug(f"Set attribute {key} to value: {value}")
+            # Convert schema key (UPPER_CASE) to attribute name (lower_case)
+            attr_name = key.lower()
+            setattr(self, attr_name, value)
+            logger.debug(f"Set attribute {attr_name} to value: {value}")
 
         # Setup loguru logging to /logs dir
         logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')

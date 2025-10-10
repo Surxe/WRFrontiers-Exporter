@@ -3,6 +3,7 @@ import sys
 import os
 import tempfile
 import shutil
+import argparse
 from unittest.mock import patch, Mock
 
 # Add the src directory to the Python path to import utils
@@ -17,6 +18,17 @@ spec.loader.exec_module(src_options)
 
 Options = src_options.Options
 init_options = src_options.init_options
+
+def create_args(**kwargs):
+    """Helper function to create argparse Namespace with given arguments."""
+    # Convert kwargs to use underscores instead of hyphens for argparse compatibility
+    converted_kwargs = {}
+    for key, value in kwargs.items():
+        # Convert hyphens to underscores for argparse attribute names
+        attr_name = key.replace('-', '_')
+        converted_kwargs[attr_name] = value
+    
+    return argparse.Namespace(**converted_kwargs)
 
 
 class TestInitOptions(unittest.TestCase):
@@ -50,56 +62,57 @@ class TestInitOptions(unittest.TestCase):
         """Test init_options creates Options with all provided arguments."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
-        options = init_options(
+        args = create_args(
             log_level="INFO",
+            should_download_dependencies=True,
             force_download_dependencies=True,
             manifest_id="12345",
+            should_download_steam_game=True,
             force_steam_download=True,
             steam_username="testuser",
             steam_password="testpass",
             steam_game_download_path=self.steam_dir,
+            should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
             force_get_mapper=False,
+            should_batch_export=True,
             output_data_dir=self.output_dir,
-            force_export=False,
-            skip_dependencies=True,
-            skip_steam_update=True,
-            skip_mapper=True,
-            skip_batch_export=True
+            force_export=False
         )
+        options = init_options(args)
         
         # Verify all options are set correctly
         self.assertEqual(options.log_level, "INFO")
+        self.assertTrue(options.should_download_dependencies)
         self.assertTrue(options.force_download_dependencies)
         self.assertEqual(options.manifest_id, "12345")
+        self.assertTrue(options.should_download_steam_game)
         self.assertTrue(options.force_steam_download)
         self.assertEqual(options.steam_username, "testuser")
         self.assertEqual(options.steam_password, "testpass")
-        self.assertEqual(options.steam_game_download_path, self.steam_dir)
-        self.assertEqual(options.dumper7_output_dir, self.dumper_dir)
-        self.assertEqual(options.output_mapper_file, mapper_file)
+        self.assertEqual(str(options.steam_game_download_path), self.steam_dir)
+        self.assertTrue(options.should_get_mapper)
+        self.assertEqual(str(options.dumper7_output_dir), self.dumper_dir)
+        self.assertEqual(str(options.output_mapper_file), mapper_file)
         self.assertFalse(options.force_get_mapper)
-        self.assertEqual(options.output_data_dir, self.output_dir)
+        self.assertTrue(options.should_batch_export)
+        self.assertEqual(str(options.output_data_dir), self.output_dir)
         self.assertFalse(options.force_export)
-        self.assertTrue(options.skip_dependencies)
-        self.assertTrue(options.skip_steam_update)
-        self.assertTrue(options.skip_mapper)
-        self.assertTrue(options.skip_batch_export)
 
     @patch.dict(os.environ, {
         'LOG_LEVEL': 'ERROR',
+        'SHOULD_DOWNLOAD_DEPENDENCIES': 'True',
         'FORCE_DOWNLOAD_DEPENDENCIES': 'True',
         'MANIFEST_ID': '67890',
+        'SHOULD_DOWNLOAD_STEAM_GAME': 'True',
         'FORCE_STEAM_DOWNLOAD': 'False',
         'STEAM_USERNAME': 'envuser',
         'STEAM_PASSWORD': 'envpass',
+        'SHOULD_GET_MAPPER': 'True',
         'FORCE_GET_MAPPER': 'False',
-        'FORCE_EXPORT': 'True',
-        'SKIP_DEPENDENCIES': 'True',
-        'SKIP_STEAM_UPDATE': 'False',
-        'SKIP_MAPPER': 'True',
-        'SKIP_BATCH_EXPORT': 'False'
+        'SHOULD_BATCH_EXPORT': 'True',
+        'FORCE_EXPORT': 'True'
     })
     def test_init_options_with_environment_fallback(self, mock_steam_dir, mock_dumper_dir, mock_mapper_file, mock_output_dir):
         """Test init_options falls back to environment variables."""
@@ -114,22 +127,24 @@ class TestInitOptions(unittest.TestCase):
             
             # Verify environment variables are used
             self.assertEqual(options.log_level, "ERROR")
+            self.assertTrue(options.should_download_dependencies)
             self.assertTrue(options.force_download_dependencies)
             self.assertEqual(options.manifest_id, "67890")
+            self.assertTrue(options.should_download_steam_game)
             self.assertFalse(options.force_steam_download)
             self.assertEqual(options.steam_username, "envuser")
             self.assertEqual(options.steam_password, "envpass")
+            self.assertTrue(options.should_get_mapper)
             self.assertFalse(options.force_get_mapper)
+            self.assertTrue(options.should_batch_export)
             self.assertTrue(options.force_export)
-            self.assertTrue(options.skip_dependencies)
-            self.assertFalse(options.skip_steam_update)
-            self.assertTrue(options.skip_mapper)
-            self.assertFalse(options.skip_batch_export)
 
     @patch.dict(os.environ, {
         'LOG_LEVEL': 'WARNING',
+        'SHOULD_DOWNLOAD_STEAM_GAME': 'True',
         'STEAM_USERNAME': 'envuser',
-        'STEAM_PASSWORD': 'envpass'
+        'STEAM_PASSWORD': 'envpass',
+        'SHOULD_BATCH_EXPORT': 'True'
     })
     def test_init_options_argument_override_environment(self, mock_steam_dir, mock_dumper_dir, mock_mapper_file, mock_output_dir):
         """Test init_options arguments override environment variables."""
@@ -139,33 +154,38 @@ class TestInitOptions(unittest.TestCase):
             'OUTPUT_MAPPER_FILE': mock_mapper_file,
             'OUTPUT_DATA_DIR': mock_output_dir
         }, clear=False):
-            options = init_options(
+            args = create_args(
                 log_level="CRITICAL",
+                should_download_steam_game=True,
                 steam_username="arguser",
-                force_export=True,
-                skip_dependencies=False
+                should_batch_export=True,
+                force_export=False
             )
+            options = init_options(args)
             
             # Arguments should override environment
             self.assertEqual(options.log_level, "CRITICAL")  # Overridden
             self.assertEqual(options.steam_username, "arguser")  # Overridden
             self.assertEqual(options.steam_password, "envpass")  # From env
-            self.assertTrue(options.force_export)  # Overridden
-            self.assertFalse(options.skip_dependencies)  # Overridden
+            self.assertFalse(options.force_export)  # Overridden
 
     def test_init_options_returns_options_object(self):
         """Test init_options returns a Options instance."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
-        options = init_options(
+        args = create_args(
             log_level="DEBUG",
+            should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
             steam_game_download_path=self.steam_dir,
+            should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
+            should_batch_export=True,
             output_data_dir=self.output_dir
         )
+        options = init_options(args)
         
         self.assertIsInstance(options, Options)
 
@@ -173,15 +193,19 @@ class TestInitOptions(unittest.TestCase):
         """Test init_options sets the global OPTIONS variable."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
-        options = init_options(
+        args = create_args(
             log_level="DEBUG",
+            should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
             steam_game_download_path=self.steam_dir,
+            should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
+            should_batch_export=True,
             output_data_dir=self.output_dir
         )
+        options = init_options(args)
         
         # Check that global OPTIONS is set
         self.assertEqual(src_options.OPTIONS, options)
@@ -192,36 +216,42 @@ class TestInitOptions(unittest.TestCase):
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
         # Provide some args as None to test fallback behavior
-        options = init_options(
+        args = create_args(
             log_level=None,  # Should use default
+            should_download_steam_game=True,
             steam_username="test",
             steam_password="test", 
             steam_game_download_path=self.steam_dir,
+            should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
+            should_batch_export=True,
             output_data_dir=self.output_dir,
-            force_export=None,  # Should use default
-            skip_dependencies=None  # Should use default
+            force_export=None  # Should use default
         )
+        options = init_options(args)
         
         # None values should trigger fallback to environment/defaults
         self.assertEqual(options.log_level, "DEBUG")  # Default
         self.assertEqual(options.steam_username, "test")
-        self.assertTrue(options.force_export)  # Default True (no env var override in test)
-        self.assertFalse(options.skip_dependencies)  # Default False
+        self.assertTrue(options.force_export)  # Default True
 
     @patch.dict(os.environ, {}, clear=True)  # Clear environment to test pure defaults
     def test_init_options_partial_arguments(self):
         """Test init_options with only some arguments provided."""
-        options = init_options(
+        args = create_args(
             log_level="INFO",
+            should_download_steam_game=True,
             steam_username="partialtest",
             steam_password="partialpass",
             steam_game_download_path=self.steam_dir,
+            should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),
+            should_batch_export=True,
             output_data_dir=self.output_dir
         )
+        options = init_options(args)
         
         # Provided arguments should be set
         self.assertEqual(options.log_level, "INFO")
@@ -229,8 +259,7 @@ class TestInitOptions(unittest.TestCase):
         
         # Unprovided arguments should use defaults
         self.assertFalse(options.force_download_dependencies)  # Default False
-        self.assertTrue(options.force_get_mapper)  # Default True (no env var override in test)
-        self.assertFalse(options.skip_dependencies)  # Default False
+        self.assertTrue(options.force_get_mapper)  # Default True
 
 
 # Mock the file system dependencies for environment tests
