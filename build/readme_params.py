@@ -17,77 +17,7 @@ sys.path.insert(0, str(src_path))
 from params import PARAMETERS_SCHEMA
 
 
-def generate_parameter_docs():
-    """Generate markdown documentation for parameters from PARAMETERS_SCHEMA."""
-    
-    lines = []
-    
-    def add_parameter_doc(param_name, details, is_section_param=False, indent_level=0):
-        """Add documentation for a single parameter."""
-        env_var = details["env"]
-        help_text = details.get("help", "")
-        default = details.get("default", "")
-        arg_name = details["arg"]
-        
-        # Convert default value to readable string
-        if default is None:
-            default_str = "None"
-        elif isinstance(default, bool):
-            default_str = f'`"{str(default).lower()}"`'
-        elif isinstance(default, str):
-            if default == "":
-                default_str = '`""` (empty for latest)' if 'manifest' in param_name.lower() else '`""`'
-            else:
-                default_str = f'`"{default}"`'
-        else:
-            default_str = f'`"{default}"`'
-        
-        # Create the parameter entry
-        indent = "  " * indent_level if is_section_param else ""
-        bullet = "-" if not is_section_param else "*"
-        
-        lines.append(f"{indent}{bullet} **{env_var}** - {help_text}")
-        lines.append(f"{indent}  - Default: {default_str}")
-        lines.append(f"{indent}  - Command line: `{arg_name}`")
-        
-        # Add links if present
-        if "links" in details:
-            for link_name, link_url in details["links"].items():
-                lines.append(f"{indent}  - See [{link_name}]({link_url})")
-        
-        # Add extended help if present
-        if "help_extended" in details:
-            lines.append(f"{indent}  - {details['help_extended']}")
-        
-        lines.append("")  # Blank line after each parameter
-    
-    # Process parameters by section
-    sections_processed = {}
-    
-    for param_name, details in PARAMETERS_SCHEMA.items():
-        section = details.get("section", "Other")
-        
-        # Initialize section if not seen before
-        if section not in sections_processed:
-            sections_processed[section] = []
-        
-        # Add main parameter to section
-        sections_processed[section].append((param_name, details, False))
-        
-        # Add section_params if they exist
-        if "section_params" in details:
-            for sub_param, sub_details in details["section_params"].items():
-                sections_processed[section].append((sub_param, sub_details, True))
-    
-    # Generate documentation by section
-    for section, params in sections_processed.items():
-        lines.append(f"#### {section}")
-        lines.append("")
-        
-        for param_name, details, is_section_param in params:
-            add_parameter_doc(param_name, details, is_section_param)
-    
-    return "\n".join(lines)
+
 
 
 def generate_cli_docs():
@@ -156,30 +86,130 @@ def generate_cli_docs():
     return "\n".join(lines)
 
 
+def generate_by_process_section():
+    """Generate parameter documentation organized by process steps."""
+    
+    # Define the process order and mapping
+    process_steps = [
+        {
+            "title": "Step 1: Dependencies",
+            "description": "Download and update required tools (BatchExport, DepotDownloader)",
+            "sections": ["Dependencies"]
+        },
+        {
+            "title": "Step 2: Steam Download", 
+            "description": "Download/update War Robots Frontiers game files from Steam",
+            "sections": ["Steam Download"]
+        },
+        {
+            "title": "Step 3: Mapping",
+            "description": "Generate mapper file using DLL injection with Dumper-7", 
+            "sections": ["Mapping"]
+        },
+        {
+            "title": "Step 4: Batch Export",
+            "description": "Export game assets to JSON format",
+            "sections": ["Batch Export"]
+        }
+    ]
+    
+    lines = []
+    
+    # Group parameters by section
+    sections_data = {}
+    for param_name, details in PARAMETERS_SCHEMA.items():
+        section = details.get("section", "Other")
+        if section not in sections_data:
+            sections_data[section] = []
+        sections_data[section].append((param_name, details, False))
+        
+        # Add section_params
+        if "section_params" in details:
+            for sub_param, sub_details in details["section_params"].items():
+                sections_data[section].append((sub_param, sub_details, True))
+    
+    # Add logging first (global configuration)
+    if "Logging" in sections_data:
+        lines.extend([
+            "#### General Configuration",
+            "",
+        ])
+        for param_name, details, is_section_param in sections_data["Logging"]:
+            add_parameter_doc_to_lines(lines, param_name, details, is_section_param)
+        lines.append("")
+    
+    # Add process steps
+    for step in process_steps:
+        lines.extend([
+            f"#### {step['title']}",
+            f"*{step['description']}*",
+            "",
+        ])
+        
+        for section_name in step['sections']:
+            if section_name in sections_data:
+                for param_name, details, is_section_param in sections_data[section_name]:
+                    add_parameter_doc_to_lines(lines, param_name, details, is_section_param)
+        lines.append("")
+    
+    return "\n".join(lines)
+
+
+
+
+
+def add_parameter_doc_to_lines(lines, param_name, details, is_section_param=False, indent_level=0):
+    """Add documentation for a single parameter to the lines list."""
+    env_var = details["env"]
+    help_text = details.get("help", "")
+    default = details.get("default", "")
+    arg_name = details["arg"]
+    
+    # Convert default value to readable string
+    if default is None:
+        default_str = "None"
+    elif isinstance(default, bool):
+        default_str = f'`"{str(default).lower()}"`'
+    elif isinstance(default, str):
+        if default == "":
+            default_str = '`""` (empty for latest)' if 'manifest' in param_name.lower() else '`""`'
+        else:
+            default_str = f'`"{default}"`'
+    else:
+        default_str = f'`"{default}"`'
+    
+    # Create the parameter entry
+    indent = "  " * indent_level if is_section_param else ""
+    bullet = "-" if not is_section_param else "*"
+    
+    lines.append(f"{indent}{bullet} **{env_var}** - {help_text}")
+    lines.append(f"{indent}  - Default: {default_str}")
+    lines.append(f"{indent}  - Command line: `{arg_name}`")
+    
+    # Add links if present
+    if "links" in details:
+        for link_name, link_url in details["links"].items():
+            lines.append(f"{indent}  - See [{link_name}]({link_url}) for available values")
+    
+    # Add extended help if present
+    if "help_extended" in details:
+        lines.append(f"{indent}  - {details['help_extended']}")
+    
+    lines.append("")  # Blank line after each parameter
+
+
 def generate_full_parameter_section():
     """Generate the complete parameter documentation section."""
     
     lines = [
         "## Configuration",
         "",
-        "### Environment Variables",
-        "",
         "Copy `.env.example` to `.env` and configure the following parameters:",
         "",
     ]
     
-    # Add environment variable documentation
-    lines.append(generate_parameter_docs())
-    
-    lines.extend([
-        "## Command Line Arguments",
-        "",
-        "All environment variables can be overridden via command line arguments.",
-        "",
-    ])
-    
-    # Add CLI documentation
-    lines.append(generate_cli_docs())
+    # Add process-organized documentation
+    lines.append(generate_by_process_section())
     
     return "\n".join(lines)
 
@@ -190,7 +220,7 @@ def write_parameter_docs():
     
     # Generate different formats
     full_section = generate_full_parameter_section()
-    env_vars_only = generate_parameter_docs()
+    env_vars_only = generate_by_process_section()
     cli_args_only = generate_cli_docs()
     
     # Write full section
@@ -243,7 +273,7 @@ def validate_generated_docs():
             
             # Check for expected content
             if filename == "readme_parameters_section.md":
-                if "## Configuration" not in content or "## Command Line Arguments" not in content:
+                if "## Configuration" not in content or "#### General Configuration" not in content:
                     print(f"⚠️  Warning: {filename} missing expected sections")
                     return False
             

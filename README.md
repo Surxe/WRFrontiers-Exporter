@@ -63,17 +63,17 @@ python src/run.py
 <!-- BEGIN_GENERATED_PARAMS -->
 ## Configuration
 
-### Environment Variables
-
 Copy `.env.example` to `.env` and configure the following parameters:
 
-#### Logging
+#### General Configuration
 
 - **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
   - Default: `"DEBUG"`
   - Command line: `--log-level`
 
-#### Dependencies
+
+#### Step 1: Dependencies
+*Download and update required tools (BatchExport, DepotDownloader)*
 
 - **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
   - Default: `"true"`
@@ -83,7 +83,9 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Default: `"false"`
   - Command line: `--force-download-dependencies`
 
-#### Steam Download
+
+#### Step 2: Steam Download
+*Download/update War Robots Frontiers game files from Steam*
 
 - **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
   - Default: `"true"`
@@ -110,7 +112,9 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Default: None
   - Command line: `--steam-game-download-path`
 
-#### Mapping
+
+#### Step 3: Mapping
+*Generate mapper file using DLL injection with Dumper-7*
 
 - **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
   - Default: `"true"`
@@ -129,7 +133,9 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Default: None
   - Command line: `--output-mapper-file`
 
-#### Batch Export
+
+#### Step 4: Batch Export
+*Export game assets to JSON format*
 
 - **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
   - Default: `"true"`
@@ -143,31 +149,6 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Default: None
   - Command line: `--output-data-dir`
 
-## Command Line Arguments
-
-All environment variables can be overridden via command line arguments.
-
-### Configuration Parameters
-- `--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}` - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
-- `--manifest-id MANIFEST_ID` - Steam manifest ID to download. If blank, the latest manifest ID will be used.
-- `--steam-username STEAM_USERNAME` - Steam username for authentication.
-- `--steam-password STEAM_PASSWORD` - Steam password for authentication.
-- `--steam-game-download-path STEAM_GAME_DOWNLOAD_PATH` - Path to the local Steam game installation directory.
-- `--dumper7-output-dir DUMPER7_OUTPUT_DIR` - Path to the where Dumper7 outputs its generated SDK.
-- `--output-mapper-file OUTPUT_MAPPER_FILE` - Path to save the generated mapping file (.usmap) at. Should end in .usmap
-- `--output-data-dir OUTPUT_DATA_DIR` - Path to save the exported assets to.
-
-### Force Options
-- `--force-download-dependencies` - Re-download dependencies even if they are already present.
-- `--force-steam-download` - Re-download/update Steam game files even if they are already present.
-- `--force-get-mapper` - Re-generate the mapping file even if it already exists.
-- `--force-export` - Re-run the BatchExport even if output directory is not empty.
-
-### Control Options
-- `--should-download-dependencies` - Whether to download dependencies.
-- `--should-download-steam-game` - Whether to download Steam game files.
-- `--should-get-mapper` - Whether to get the mapping file using Dumper7.
-- `--should-batch-export` - Whether to run the BatchExport tool to export assets.
 
 <!-- END_GENERATED_PARAMS -->
 

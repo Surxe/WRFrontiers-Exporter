@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Helper script to update RE        print("SUCCESS: Successfully updated README.md with generated parameter documentation")DME.md with generated parameter documentation.
+Helper script to update README.md with generated parameter documentation.
 
 Usage:
     python build/update_readme.py
@@ -17,11 +17,11 @@ def update_readme_with_markers():
     params_doc_path = Path(__file__).parent / "readme_parameters_section.md"
     
     if not readme_path.exists():
-        print("ERROR: README.md not found")
+        print("❌ README.md not found")
         return False
     
     if not params_doc_path.exists():
-        print("ERROR: Generated parameter docs not found. Run build/readme_params.py first.")
+        print("❌ Generated parameter docs not found. Run build/readme_params.py first.")
         return False
     
     # Read files
@@ -37,7 +37,7 @@ def update_readme_with_markers():
     
     # Check if markers exist
     if start_marker not in readme_content or end_marker not in readme_content:
-        print("WARNING: Markers not found in README.md")
+        print("⚠️  Markers not found in README.md")
         print("Add these markers where you want the parameter docs:")
         print(f"    {start_marker}")
         print(f"    {end_marker}")
@@ -53,7 +53,7 @@ def update_readme_with_markers():
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(new_readme_content)
     
-    print("Successfully updated README.md with generated parameter documentation")
+    print("✅ Successfully updated README.md with generated parameter documentation")
     return True
 
 if __name__ == "__main__":
