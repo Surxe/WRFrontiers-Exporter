@@ -14,7 +14,7 @@ PARAMETERS_SCHEMA = {
         "env": "SHOULD_DOWNLOAD_DEPENDENCIES",
         "arg": "--should-download-dependencies",
         "type": bool,
-        "default": True,
+        "default": False,
         "help": "Whether to download dependencies.",
         "section": "Dependencies",
         "section_params": {
@@ -33,7 +33,7 @@ PARAMETERS_SCHEMA = {
         "env": "SHOULD_DOWNLOAD_STEAM_GAME",
         "arg": "--should-download-steam-game",
         "type": bool,
-        "default": True,
+        "default": False,
         "help": "Whether to download Steam game files.",
         "section": "Steam Download",
         "section_params": {
@@ -80,7 +80,7 @@ PARAMETERS_SCHEMA = {
         "env": "SHOULD_GET_MAPPER",
         "arg": "--should-get-mapper",
         "type": bool,
-        "default": True,
+        "default": False,
         "help": "Whether to get the mapping file using Dumper7.",
         "section": "Mapping",
         "section_params": {
@@ -112,7 +112,7 @@ PARAMETERS_SCHEMA = {
         "env": "SHOULD_BATCH_EXPORT",
         "arg": "--should-batch-export",
         "type": bool,
-        "default": True,
+        "default": False,
         "help": "Whether to run the BatchExport tool to export assets.",
         "section": "Batch Export",
         "section_params": {

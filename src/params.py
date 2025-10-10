@@ -73,7 +73,12 @@ class Params:
             args_dict = {}
 
         # Process the schema to set all attributes
-        self._process_schema(PARAMETERS_SCHEMA, args_dict)
+        combined_args_and_params = self._process_schema(PARAMETERS_SCHEMA, args_dict)
+
+        # Set attributes dynamically
+        for key, value in combined_args_and_params.items():
+            setattr(self, key, value)
+            logger.debug(f"Set attribute {key} to value: {value}")
 
         # Setup loguru logging to /logs dir
         logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')
@@ -99,6 +104,9 @@ class Params:
         """Process the parameter schema and set instance attributes."""
 
         print("Processing schema with args_dict:", args_dict)
+
+        # Combine args and params
+        combined_args_and_params = {}
 
         def process_param(param_name, details):
             # Convert arg name to attribute name (remove -- and convert - to _)
@@ -132,8 +140,8 @@ class Params:
             else:
                 value = details["default"]
             
-            # Set the attribute
-            setattr(self, attr_name, value)
+            # Store
+            combined_args_and_params[param_name] = value
         
         # Process all parameters in the schema
         for param_name, details in schema.items():
@@ -145,6 +153,13 @@ class Params:
                     process_param(sub_param, sub_details)
 
     
+        # If none of the --should-x args/params are in combined_args_and_params, default all to true for ease of use
+        should_param_keys = [k for k in PARAMETERS_SCHEMA if k != 'LOG_LEVEL']
+        if not any(key in combined_args_and_params for key in should_param_keys):
+            for key in should_param_keys:
+                combined_args_and_params[key] = True
+            logger.debug("No --should-x args/params provided, defaulting all to True")
+        return combined_args_and_params
 
     def validate(self):
         """
