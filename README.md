@@ -64,7 +64,7 @@ python src/run.py --help
 
 ### Command Line Argument Usage
 
-For each parameter, the command line argument may be used at runtime instead of providing it in the `.env`.
+For each option, the command line argument may be used at runtime instead of providing it in the `.env`.
 
 ```bash
 python src/run.py                       # Run all steps with default/env values
@@ -73,9 +73,9 @@ python src/run.py --log-level INFO      # Run all steps with default/env values,
 
 ### Options
 
-Copy `.env.example` to `.env` and configure the following parameters, unless they will be provided as arguments at runtime:
+Copy `.env.example` to `.env` and configure the following options, unless they will be provided as arguments at runtime:
 
-<!-- BEGIN_GENERATED_PARAMS -->
+<!-- BEGIN_GENERATED_OPTIONS -->
 #### Logging
 
 - **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
@@ -157,12 +157,12 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--output-data-dir`
 
 
-<!-- END_GENERATED_PARAMS -->
+<!-- END_GENERATED_OPTIONS -->
 ### Miscellaneous Option Behavior
 
 * An option's value is determined by the following priority, in descending order
   * Argument
-  * Parameter
+  * Option
   * Default
 * If all options prefixed with `SHOULD_` are defaulted to `False`, they are instead all defaulted to `True` for ease of use
 * Options are only required if their section's `SHOULD_` option is `True`
@@ -180,7 +180,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 WRFrontiers-Exporter/
 ├── src/
 │   ├── run.py                    # Main orchestration script
-│   ├── utils.py                  # Shared utilities and parameter management
+│   ├── utils.py                  # Shared utilities and option management
 │   ├── dependency_manager.py     # Dependency download/update management
 │   ├── steam/
 │   │   └── run_depot_downloader.py  # Steam game download
@@ -235,7 +235,7 @@ python src/run.py --log-level DEBUG
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-* After making changes to `src/params_schema.py`, rerun `build_scripts/build_docs.py` to rebuild the `.env.example` and `README.md`
+* After making changes to `src/options_schema.py`, rerun `build_scripts/build_docs.py` to rebuild the `.env.example` and `README.md`
 * Follow standards set by `STANDARDS.md` (barebones atm)
 
 ## Disclaimer

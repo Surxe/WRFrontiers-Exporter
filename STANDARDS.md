@@ -12,7 +12,7 @@ snake_case
 ## Terminology
 ### Settings / Options
 * Argument - CLI provided variable at runtime, i.e. `--log-level`
-* Parameter - `.env` provided variable, i.e. `LOG_LEVEL`
+* Parameter / Environment Variable - `.env` provided variable, i.e. `LOG_LEVEL`
 * Default: Default value for a given option
-* Option - Argument, or parameter, or default (in descending order of priority)
-* todo: update workspace to use Option instead of param in these places
+* Option - Argument, or option, or default (in descending order of priority)
+* todo: update workspace to use Option instead of option in these places

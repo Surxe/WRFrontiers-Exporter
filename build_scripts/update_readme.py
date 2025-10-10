@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Helper script to update README.md with generated parameter documentation.
+Helper script to update README.md with generated option documentation.
 """
 
 import re
@@ -12,39 +12,39 @@ def update_readme_with_markers():
     
     repo_root = Path(__file__).parent.parent
     readme_path = repo_root / "README.md"
-    params_doc_path = Path(__file__).parent.parent / ".temp" / "readme_parameters_section.md"
-    os.makedirs(params_doc_path.parent, exist_ok=True)
+    options_doc_path = Path(__file__).parent.parent / ".temp" / "readme_options_section.md"
+    os.makedirs(options_doc_path.parent, exist_ok=True)
     
     if not readme_path.exists():
         print("README.md not found")
         return False
     
-    if not params_doc_path.exists():
-        print("Generated parameter docs not found. Run readme_params.py first.")
+    if not options_doc_path.exists():
+        print("Generated option docs not found. Run readme_options.py first.")
         return False
     
     # Read files
     with open(readme_path, "r", encoding="utf-8") as f:
         readme_content = f.read()
     
-    with open(params_doc_path, "r", encoding="utf-8") as f:
-        params_content = f.read()
+    with open(options_doc_path, "r", encoding="utf-8") as f:
+        options_content = f.read()
     
     # Define markers
-    start_marker = "<!-- BEGIN_GENERATED_PARAMS -->"
-    end_marker = "<!-- END_GENERATED_PARAMS -->"
+    start_marker = "<!-- BEGIN_GENERATED_OPTIONS -->"
+    end_marker = "<!-- END_GENERATED_OPTIONS -->"
     
     # Check if markers exist
     if start_marker not in readme_content or end_marker not in readme_content:
         print("Markers not found in README.md")
-        print("Add these markers where you want the parameter docs:")
+        print("Add these markers where you want the option docs:")
         print(f"    {start_marker}")
         print(f"    {end_marker}")
         return False
     
     # Replace content between markers
     pattern = f"{re.escape(start_marker)}.*?{re.escape(end_marker)}"
-    replacement = f"{start_marker}\n{params_content}\n{end_marker}"
+    replacement = f"{start_marker}\n{options_content}\n{end_marker}"
     
     new_readme_content = re.sub(pattern, replacement, readme_content, flags=re.DOTALL)
     
@@ -52,10 +52,10 @@ def update_readme_with_markers():
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(new_readme_content)
 
-    # Remove the temporary params doc file
-    params_doc_path.unlink(missing_ok=True)
+    # Remove the temporary options doc file
+    options_doc_path.unlink(missing_ok=True)
     
-    print("Successfully updated README.md with generated parameter documentation")
+    print("Successfully updated README.md with generated option documentation")
     return True
 
 if __name__ == "__main__":

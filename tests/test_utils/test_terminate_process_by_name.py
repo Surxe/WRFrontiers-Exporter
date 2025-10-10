@@ -175,7 +175,7 @@ class TestTerminateProcessByName(unittest.TestCase):
                 result = terminate_process_by_name(process_name)
                 self.assertTrue(result)
         
-        # Verify all processes were called with correct parameters
+        # Verify all processes were called with correct options
         expected_calls = [
             unittest.mock.call(['taskkill', '/F', '/IM', name], capture_output=True, text=True)
             for name in test_processes
@@ -204,7 +204,7 @@ class TestTerminateProcessByName(unittest.TestCase):
                 result = terminate_process_by_name(process_name)
                 self.assertTrue(result)
         
-        # Verify all processes were called with correct parameters
+        # Verify all processes were called with correct options
         expected_calls = [
             unittest.mock.call(['pkill', '-f', name], capture_output=True, text=True)
             for name in test_processes
@@ -352,8 +352,8 @@ class TestTerminateProcessByName(unittest.TestCase):
         
         # Check function signature
         sig = inspect.signature(terminate_process_by_name)
-        params = list(sig.parameters.keys())
-        self.assertEqual(params, ['process_name'])
+        options = list(sig.options.keys())
+        self.assertEqual(options, ['process_name'])
         
         # Check that it has a docstring
         self.assertIsNotNone(terminate_process_by_name.__doc__)

@@ -15,14 +15,14 @@ spec = importlib.util.spec_from_file_location("src_utils", os.path.join(src_path
 src_utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(src_utils)
 
-Params = src_utils.Params
-init_params = src_utils.init_params
+Options = src_utils.Options
+init_options = src_utils.init_options
 
 
-class TestInitParams(unittest.TestCase):
-    """Test cases for the init_params function.
+class TestInitOptions(unittest.TestCase):
+    """Test cases for the init_options function.
     
-    The init_params function is a factory function that creates a Params object
+    The init_options function is a factory function that creates a Options object
     with provided arguments, falling back to environment variables.
     """
 
@@ -46,11 +46,11 @@ class TestInitParams(unittest.TestCase):
             shutil.rmtree(self.temp_dir)
 
     @patch.dict(os.environ, {}, clear=True)
-    def test_init_params_with_all_arguments(self):
-        """Test init_params creates Params with all provided arguments."""
+    def test_init_options_with_all_arguments(self):
+        """Test init_options creates Options with all provided arguments."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
-        params = init_params(
+        options = init_options(
             log_level="INFO",
             force_download_dependencies=True,
             manifest_id="12345",
@@ -69,23 +69,23 @@ class TestInitParams(unittest.TestCase):
             skip_batch_export=True
         )
         
-        # Verify all parameters are set correctly
-        self.assertEqual(params.log_level, "INFO")
-        self.assertTrue(params.force_download_dependencies)
-        self.assertEqual(params.manifest_id, "12345")
-        self.assertTrue(params.force_steam_download)
-        self.assertEqual(params.steam_username, "testuser")
-        self.assertEqual(params.steam_password, "testpass")
-        self.assertEqual(params.steam_game_download_path, self.steam_dir)
-        self.assertEqual(params.dumper7_output_dir, self.dumper_dir)
-        self.assertEqual(params.output_mapper_file, mapper_file)
-        self.assertFalse(params.force_get_mapper)
-        self.assertEqual(params.output_data_dir, self.output_dir)
-        self.assertFalse(params.force_export)
-        self.assertTrue(params.skip_dependencies)
-        self.assertTrue(params.skip_steam_update)
-        self.assertTrue(params.skip_mapper)
-        self.assertTrue(params.skip_batch_export)
+        # Verify all options are set correctly
+        self.assertEqual(options.log_level, "INFO")
+        self.assertTrue(options.force_download_dependencies)
+        self.assertEqual(options.manifest_id, "12345")
+        self.assertTrue(options.force_steam_download)
+        self.assertEqual(options.steam_username, "testuser")
+        self.assertEqual(options.steam_password, "testpass")
+        self.assertEqual(options.steam_game_download_path, self.steam_dir)
+        self.assertEqual(options.dumper7_output_dir, self.dumper_dir)
+        self.assertEqual(options.output_mapper_file, mapper_file)
+        self.assertFalse(options.force_get_mapper)
+        self.assertEqual(options.output_data_dir, self.output_dir)
+        self.assertFalse(options.force_export)
+        self.assertTrue(options.skip_dependencies)
+        self.assertTrue(options.skip_steam_update)
+        self.assertTrue(options.skip_mapper)
+        self.assertTrue(options.skip_batch_export)
 
     @patch.dict(os.environ, {
         'LOG_LEVEL': 'ERROR',
@@ -101,8 +101,8 @@ class TestInitParams(unittest.TestCase):
         'SKIP_MAPPER': 'True',
         'SKIP_BATCH_EXPORT': 'False'
     })
-    def test_init_params_with_environment_fallback(self, mock_steam_dir, mock_dumper_dir, mock_mapper_file, mock_output_dir):
-        """Test init_params falls back to environment variables."""
+    def test_init_options_with_environment_fallback(self, mock_steam_dir, mock_dumper_dir, mock_mapper_file, mock_output_dir):
+        """Test init_options falls back to environment variables."""
         # Mock the required paths in environment
         with patch.dict(os.environ, {
             'STEAM_GAME_DOWNLOAD_PATH': mock_steam_dir,
@@ -110,36 +110,36 @@ class TestInitParams(unittest.TestCase):
             'OUTPUT_MAPPER_FILE': mock_mapper_file,
             'OUTPUT_DATA_DIR': mock_output_dir
         }, clear=False):
-            params = init_params()
+            options = init_options()
             
             # Verify environment variables are used
-            self.assertEqual(params.log_level, "ERROR")
-            self.assertTrue(params.force_download_dependencies)
-            self.assertEqual(params.manifest_id, "67890")
-            self.assertFalse(params.force_steam_download)
-            self.assertEqual(params.steam_username, "envuser")
-            self.assertEqual(params.steam_password, "envpass")
-            self.assertFalse(params.force_get_mapper)
-            self.assertTrue(params.force_export)
-            self.assertTrue(params.skip_dependencies)
-            self.assertFalse(params.skip_steam_update)
-            self.assertTrue(params.skip_mapper)
-            self.assertFalse(params.skip_batch_export)
+            self.assertEqual(options.log_level, "ERROR")
+            self.assertTrue(options.force_download_dependencies)
+            self.assertEqual(options.manifest_id, "67890")
+            self.assertFalse(options.force_steam_download)
+            self.assertEqual(options.steam_username, "envuser")
+            self.assertEqual(options.steam_password, "envpass")
+            self.assertFalse(options.force_get_mapper)
+            self.assertTrue(options.force_export)
+            self.assertTrue(options.skip_dependencies)
+            self.assertFalse(options.skip_steam_update)
+            self.assertTrue(options.skip_mapper)
+            self.assertFalse(options.skip_batch_export)
 
     @patch.dict(os.environ, {
         'LOG_LEVEL': 'WARNING',
         'STEAM_USERNAME': 'envuser',
         'STEAM_PASSWORD': 'envpass'
     })
-    def test_init_params_argument_override_environment(self, mock_steam_dir, mock_dumper_dir, mock_mapper_file, mock_output_dir):
-        """Test init_params arguments override environment variables."""
+    def test_init_options_argument_override_environment(self, mock_steam_dir, mock_dumper_dir, mock_mapper_file, mock_output_dir):
+        """Test init_options arguments override environment variables."""
         with patch.dict(os.environ, {
             'STEAM_GAME_DOWNLOAD_PATH': mock_steam_dir,
             'DUMPER7_OUTPUT_DIR': mock_dumper_dir,
             'OUTPUT_MAPPER_FILE': mock_mapper_file,
             'OUTPUT_DATA_DIR': mock_output_dir
         }, clear=False):
-            params = init_params(
+            options = init_options(
                 log_level="CRITICAL",
                 steam_username="arguser",
                 force_export=True,
@@ -147,17 +147,17 @@ class TestInitParams(unittest.TestCase):
             )
             
             # Arguments should override environment
-            self.assertEqual(params.log_level, "CRITICAL")  # Overridden
-            self.assertEqual(params.steam_username, "arguser")  # Overridden
-            self.assertEqual(params.steam_password, "envpass")  # From env
-            self.assertTrue(params.force_export)  # Overridden
-            self.assertFalse(params.skip_dependencies)  # Overridden
+            self.assertEqual(options.log_level, "CRITICAL")  # Overridden
+            self.assertEqual(options.steam_username, "arguser")  # Overridden
+            self.assertEqual(options.steam_password, "envpass")  # From env
+            self.assertTrue(options.force_export)  # Overridden
+            self.assertFalse(options.skip_dependencies)  # Overridden
 
-    def test_init_params_returns_params_object(self):
-        """Test init_params returns a Params instance."""
+    def test_init_options_returns_options_object(self):
+        """Test init_options returns a Options instance."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
-        params = init_params(
+        options = init_options(
             log_level="DEBUG",
             steam_username="test",
             steam_password="test",
@@ -167,13 +167,13 @@ class TestInitParams(unittest.TestCase):
             output_data_dir=self.output_dir
         )
         
-        self.assertIsInstance(params, Params)
+        self.assertIsInstance(options, Options)
 
-    def test_init_params_sets_global_params(self):
-        """Test init_params sets the global PARAMS variable."""
+    def test_init_options_sets_global_options(self):
+        """Test init_options sets the global OPTIONS variable."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
-        params = init_params(
+        options = init_options(
             log_level="DEBUG",
             steam_username="test",
             steam_password="test",
@@ -183,16 +183,16 @@ class TestInitParams(unittest.TestCase):
             output_data_dir=self.output_dir
         )
         
-        # Check that global PARAMS is set
-        self.assertEqual(src_utils.PARAMS, params)
+        # Check that global OPTIONS is set
+        self.assertEqual(src_utils.OPTIONS, options)
 
     @patch.dict(os.environ, {}, clear=True)  # Clear environment to test pure defaults
-    def test_init_params_with_none_values(self):
-        """Test init_params handles None values correctly."""
+    def test_init_options_with_none_values(self):
+        """Test init_options handles None values correctly."""
         mapper_file = os.path.join(self.mapper_dir, "test.usmap")
         
         # Provide some args as None to test fallback behavior
-        params = init_params(
+        options = init_options(
             log_level=None,  # Should use default
             steam_username="test",
             steam_password="test", 
@@ -205,15 +205,15 @@ class TestInitParams(unittest.TestCase):
         )
         
         # None values should trigger fallback to environment/defaults
-        self.assertEqual(params.log_level, "DEBUG")  # Default
-        self.assertEqual(params.steam_username, "test")
-        self.assertTrue(params.force_export)  # Default True (no env var override in test)
-        self.assertFalse(params.skip_dependencies)  # Default False
+        self.assertEqual(options.log_level, "DEBUG")  # Default
+        self.assertEqual(options.steam_username, "test")
+        self.assertTrue(options.force_export)  # Default True (no env var override in test)
+        self.assertFalse(options.skip_dependencies)  # Default False
 
     @patch.dict(os.environ, {}, clear=True)  # Clear environment to test pure defaults
-    def test_init_params_partial_arguments(self):
-        """Test init_params with only some arguments provided."""
-        params = init_params(
+    def test_init_options_partial_arguments(self):
+        """Test init_options with only some arguments provided."""
+        options = init_options(
             log_level="INFO",
             steam_username="partialtest",
             steam_password="partialpass",
@@ -224,13 +224,13 @@ class TestInitParams(unittest.TestCase):
         )
         
         # Provided arguments should be set
-        self.assertEqual(params.log_level, "INFO")
-        self.assertEqual(params.steam_username, "partialtest")
+        self.assertEqual(options.log_level, "INFO")
+        self.assertEqual(options.steam_username, "partialtest")
         
         # Unprovided arguments should use defaults
-        self.assertFalse(params.force_download_dependencies)  # Default False
-        self.assertTrue(params.force_get_mapper)  # Default True (no env var override in test)
-        self.assertFalse(params.skip_dependencies)  # Default False
+        self.assertFalse(options.force_download_dependencies)  # Default False
+        self.assertTrue(options.force_get_mapper)  # Default True (no env var override in test)
+        self.assertFalse(options.skip_dependencies)  # Default False
 
 
 # Mock the file system dependencies for environment tests
@@ -252,8 +252,8 @@ def mock_paths_setup(test_func):
     return wrapper
 
 # Apply decorator to environment tests
-TestInitParams.test_init_params_with_environment_fallback = mock_paths_setup(TestInitParams.test_init_params_with_environment_fallback)
-TestInitParams.test_init_params_argument_override_environment = mock_paths_setup(TestInitParams.test_init_params_argument_override_environment)
+TestInitOptions.test_init_options_with_environment_fallback = mock_paths_setup(TestInitOptions.test_init_options_with_environment_fallback)
+TestInitOptions.test_init_options_argument_override_environment = mock_paths_setup(TestInitOptions.test_init_options_argument_override_environment)
 
 
 if __name__ == '__main__':

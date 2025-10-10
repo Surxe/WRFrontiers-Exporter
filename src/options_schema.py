@@ -1,7 +1,7 @@
 from typing import Literal
 from pathlib import Path
 
-PARAMETERS_SCHEMA = {
+OPTIONS_SCHEMA = {
     "LOG_LEVEL": {
         "env": "LOG_LEVEL",
         "arg": "--log-level",
@@ -17,14 +17,14 @@ PARAMETERS_SCHEMA = {
         "default": False,
         "help": "Whether to download dependencies.",
         "section": "Dependencies",
-        "section_params": {
+        "section_options": {
             "FORCE_DOWNLOAD_DEPENDENCIES": {
                 "env": "FORCE_DOWNLOAD_DEPENDENCIES",
                 "arg": "--force-download-dependencies",
                 "type": bool,
                 "default": False,
                 "section": "Dependencies",
-                "section_reliant_param": "SHOULD_DOWNLOAD_DEPENDENCIES",
+                "section_reliant_option": "SHOULD_DOWNLOAD_DEPENDENCIES",
                 "help": "Re-download dependencies even if they are already present."
             }
         }
@@ -36,7 +36,7 @@ PARAMETERS_SCHEMA = {
         "default": False,
         "help": "Whether to download Steam game files.",
         "section": "Steam Download",
-        "section_params": {
+        "section_options": {
             "FORCE_STEAM_DOWNLOAD": {
                 "env": "FORCE_STEAM_DOWNLOAD",
                 "arg": "--force-steam-download",
@@ -83,7 +83,7 @@ PARAMETERS_SCHEMA = {
         "default": False,
         "help": "Whether to get the mapping file using Dumper7.",
         "section": "Mapping",
-        "section_params": {
+        "section_options": {
             "FORCE_GET_MAPPER": {
                 "env": "FORCE_GET_MAPPER",
                 "arg": "--force-get-mapper",
@@ -115,7 +115,7 @@ PARAMETERS_SCHEMA = {
         "default": False,
         "help": "Whether to run the BatchExport tool to export assets.",
         "section": "Batch Export",
-        "section_params": {
+        "section_options": {
             "FORCE_EXPORT": {
                 "env": "FORCE_EXPORT",
                 "arg": "--force-export",

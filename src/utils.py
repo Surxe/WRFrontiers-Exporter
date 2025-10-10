@@ -8,7 +8,7 @@ from loguru import logger
 load_dotenv()
 
 ###############################
-#           Params            #
+#           Options            #
 ###############################
 
 def is_truthy(string):
@@ -51,11 +51,11 @@ def normalize_path(path: str) -> str:
 #           Process           #
 ###############################
 
-def run_process(params, name='', timeout=60*60, background=False): #times out after 1hr
-    """Runs a subprocess with the given parameters and logs its output line by line
+def run_process(options, name='', timeout=60*60, background=False): #times out after 1hr
+    """Runs a subprocess with the given options and logs its output line by line
 
     Args:
-        params (list[str] | str): The command and arguments to execute
+        options (list[str] | str): The command and arguments to execute
         name (str, optional): An optional name to identify the process in logs. Defaults to ''
         timeout (int, optional): Maximum time to wait for process completion in seconds. Defaults to 3600 (1 hour)
         background (bool, optional): If True, starts the process in background and returns the process object. Defaults to False.
@@ -70,13 +70,13 @@ def run_process(params, name='', timeout=60*60, background=False): #times out af
     process = None
     try:
         # Handle shell scripts on Windows by explicitly using bash
-        if isinstance(params, str) and params.endswith('.sh') and os.name == 'nt':
-            params = ['bash', params]
-        elif isinstance(params, list) and len(params) > 0 and params[0].endswith('.sh') and os.name == 'nt':
-            params = ['bash'] + params
+        if isinstance(options, str) and options.endswith('.sh') and os.name == 'nt':
+            options = ['bash', options]
+        elif isinstance(options, list) and len(options) > 0 and options[0].endswith('.sh') and os.name == 'nt':
+            options = ['bash'] + options
 
         process = subprocess.Popen(  # noqa: F821
-            params, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            options, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )
 
         # If background mode, return the process object immediately

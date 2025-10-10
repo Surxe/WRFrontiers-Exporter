@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-Build script to generate .env.example from PARAMETERS_SCHEMA
+Build script to generate .env.example from OPTIONS_SCHEMA
 
-This script creates a new .env.example file based on the parameter schema,
-ensuring documentation stays in sync with the actual parameter definitions.
+This script creates a new .env.example file based on the option schema,
+ensuring documentation stays in sync with the actual option definitions.
 """
 
 import os
 import sys
 from pathlib import Path
 
-# Add src directory to path to import params module
+# Add src directory to path to import options module
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from params import PARAMETERS_SCHEMA
+from options import OPTIONS_SCHEMA
 
 
 def generate_env_example():
-    """Generate .env.example content from PARAMETERS_SCHEMA."""
+    """Generate .env.example content from OPTIONS_SCHEMA."""
     
     # Header
     header = [
@@ -27,8 +27,8 @@ def generate_env_example():
     
     lines = header + [""]  # Add blank line after header
     
-    def process_param(param_name, details, is_section_param=False):
-        """Process a single parameter and add it to the lines."""
+    def process_option(option_name, details, is_section_option=False):
+        """Process a single option and add it to the lines."""
         env_var = details["env"]
         help_text = details.get("help", "")
         default = details.get("default", "")
@@ -63,12 +63,12 @@ def generate_env_example():
         
         # Add the environment variable with default value
         lines.append(f'{env_var}="{default_str}"')
-        lines.append("")  # Blank line after each parameter
+        lines.append("")  # Blank line after each option
     
-    # Process parameters by section
+    # Process options by section
     sections_processed = set()
     
-    for param_name, details in PARAMETERS_SCHEMA.items():
+    for option_name, details in OPTIONS_SCHEMA.items():
         section = details.get("section", "Other")
         
         # Add section header if we haven't processed this section yet
@@ -78,13 +78,13 @@ def generate_env_example():
             lines.append(f"# {section}")
             sections_processed.add(section)
         
-        # Process main parameter
-        process_param(param_name, details)
+        # Process main option
+        process_option(option_name, details)
         
-        # Process section_params if they exist
-        if "section_params" in details:
-            for sub_param, sub_details in details["section_params"].items():
-                process_param(sub_param, sub_details, is_section_param=True)
+        # Process section_options if they exist
+        if "section_options" in details:
+            for sub_option, sub_details in details["section_options"].items():
+                process_option(sub_option, sub_details, is_section_option=True)
     
     return "\n".join(lines)
 
@@ -105,15 +105,15 @@ def update_env_example():
         print(f"Successfully updated {env_example_path}")
         print(f"Generated {len(new_content.splitlines())} lines")
         
-        # Show summary of parameters
-        param_count = len(PARAMETERS_SCHEMA)
-        section_param_count = sum(
-            len(details.get("section_params", {})) 
-            for details in PARAMETERS_SCHEMA.values()
+        # Show summary of options
+        option_count = len(OPTIONS_SCHEMA)
+        section_option_count = sum(
+            len(details.get("section_options", {})) 
+            for details in OPTIONS_SCHEMA.values()
         )
-        total_params = param_count + section_param_count
+        total_options = option_count + section_option_count
         
-        print(f"Processed {total_params} parameters ({param_count} main + {section_param_count} sub-parameters)")
+        print(f"Processed {total_options} options ({option_count} main + {section_option_count} sub-options)")
         
     except Exception as e:
         print(f"Error updating .env.example: {e}")
@@ -157,7 +157,7 @@ def validate_generated_file():
 
 def main():
     """Main function to run the build process."""
-    print("Building .env.example from PARAMETERS_SCHEMA...")
+    print("Building .env.example from OPTIONS_SCHEMA...")
     print()
     
     # Update the .env.example file
@@ -173,7 +173,7 @@ def main():
     print()
     print("Next steps:")
     print("- Review the generated .env.example file")
-    print("- Update any parameter descriptions if needed in PARAMETERS_SCHEMA")
+    print("- Update any option descriptions if needed in OPTIONS_SCHEMA")
     print("- Run this script again after schema changes to keep documentation in sync")
 
 

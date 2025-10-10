@@ -3,8 +3,8 @@
 Master build script to update all generated documentation files (Windows compatible)
 
 This script:
-1. Generates .env.example from PARAMETERS_SCHEMA
-2. Generates README parameter documentation  
+1. Generates .env.example from OPTIONS_SCHEMA
+2. Generates README option documentation  
 3. Updates README.md with the generated content
 
 Usage:
@@ -42,12 +42,12 @@ def run_script(script_name):
 def main():
     """Run all documentation build scripts."""
     
-    print("Building all documentation from PARAMETERS_SCHEMA...")
+    print("Building all documentation from OPTIONS_SCHEMA...")
     print("=" * 60)
     
     # First, let's just run the update script since we already have the generated files
     scripts_to_run = [
-        "readme_params.py",  # Generate parameter docs
+        "readme_options.py",  # Generate option docs
         "update_readme.py",     # Update README.md with generated content
         "env_example.py"    # Generate .env.example
     ]
@@ -65,7 +65,7 @@ def main():
         print(f"SUCCESS: All {total_scripts} build scripts completed!")
         print("\nGenerated/Updated Files:")
         print("   .env.example - Environment configuration template")
-        print("   README.md - Updated with current parameter documentation")
+        print("   README.md - Updated with current option documentation")
         return True
     else:
         print(f"ERROR: {total_scripts - success_count} of {total_scripts} scripts failed")
