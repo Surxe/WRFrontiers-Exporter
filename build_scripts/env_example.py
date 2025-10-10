@@ -102,8 +102,8 @@ def update_env_example():
         with open(env_example_path, "w", encoding="utf-8") as f:
             f.write(new_content)
         
-        print(f"✅ Successfully updated {env_example_path}")
-        print(f"📄 Generated {len(new_content.splitlines())} lines")
+        print(f"Successfully updated {env_example_path}")
+        print(f"Generated {len(new_content.splitlines())} lines")
         
         # Show summary of parameters
         param_count = len(PARAMETERS_SCHEMA)
@@ -113,10 +113,10 @@ def update_env_example():
         )
         total_params = param_count + section_param_count
         
-        print(f"📊 Processed {total_params} parameters ({param_count} main + {section_param_count} sub-parameters)")
+        print(f"Processed {total_params} parameters ({param_count} main + {section_param_count} sub-parameters)")
         
     except Exception as e:
-        print(f"❌ Error updating .env.example: {e}")
+        print(f"Error updating .env.example: {e}")
         return False
     
     return True
@@ -128,7 +128,7 @@ def validate_generated_file():
     env_example_path = repo_root / ".env.example"
     
     if not env_example_path.exists():
-        print(f"❌ Generated file {env_example_path} does not exist")
+        print(f"Generated file {env_example_path} does not exist")
         return False
     
     try:
@@ -140,24 +140,24 @@ def validate_generated_file():
         has_env_vars = any("=" in line and not line.strip().startswith("#") for line in lines)
         
         if not has_header:
-            print("⚠️  Warning: Generated file missing expected header")
+            print("Warning: Generated file missing expected header")
             return False
         
         if not has_env_vars:
-            print("⚠️  Warning: Generated file contains no environment variables")
+            print("Warning: Generated file contains no environment variables")
             return False
         
-        print(f"✅ Generated file validation passed ({len(lines)} lines)")
+        print(f"Generated file validation passed ({len(lines)} lines)")
         return True
         
     except Exception as e:
-        print(f"❌ Error validating generated file: {e}")
+        print(f"Error validating generated file: {e}")
         return False
 
 
 def main():
     """Main function to run the build process."""
-    print("🔧 Building .env.example from PARAMETERS_SCHEMA...")
+    print("Building .env.example from PARAMETERS_SCHEMA...")
     print()
     
     # Update the .env.example file
@@ -169,7 +169,7 @@ def main():
         sys.exit(1)
     
     print()
-    print("🎉 Build completed successfully!")
+    print("Build completed successfully!")
     print()
     print("Next steps:")
     print("- Review the generated .env.example file")
