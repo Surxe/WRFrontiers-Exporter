@@ -19,7 +19,7 @@ import time
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from params import init_params
+from params import init_params, ArgumentWriter
 from loguru import logger
 import traceback
 from dependency_manager import main as dependency_main
@@ -378,81 +378,8 @@ Quick Examples:
         """
     )
     
-    parser.add_argument(
-        "--log-level", 
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set the log level (default: DEBUG)"
-    )
-    parser.add_argument(
-        "--force-download-dependencies", 
-        action="store_true", 
-        help="Force re-download of dependencies even if same version exists"
-    )
-    parser.add_argument(
-        "--manifest-id", 
-        help="Specific Steam manifest ID to download (leave empty for latest)"
-    )
-    parser.add_argument(
-        "--force-steam-download", 
-        action="store_true", 
-        help="Force re-download of Steam files even if same manifest exists"
-    )
-    parser.add_argument(
-        "--steam-username", 
-        help="Steam username for DepotDownloader authentication"
-    )
-    parser.add_argument(
-        "--steam-password", 
-        help="Steam password for DepotDownloader authentication"
-    )
-    parser.add_argument(
-        "--steam-game-download-path", 
-        help="Path where the game will be downloaded by DepotDownloader"
-    )
-    parser.add_argument(
-        "--dumper7-output-dir", 
-        help="Path to Dumper-7's output folder"
-    )
-    parser.add_argument(
-        "--output-mapper-file", 
-        help="Where the generated mapper file will be saved"
-    )
-    parser.add_argument(
-        "--force-get-mapper", 
-        action="store_true", 
-        help="Force regeneration of mapper file even if it exists"
-    )
-    parser.add_argument(
-        "--output-data-dir", 
-        help="Path where the output JSON will be saved"
-    )
-    parser.add_argument(
-        "--force-export", 
-        action="store_true", 
-        help="Force re-export of game data even if output exists"
-    )
-    
-    # Skip options for specific stages
-    parser.add_argument(
-        "--skip-dependencies", 
-        action="store_true", 
-        help="Skip dependency manager step"
-    )
-    parser.add_argument(
-        "--skip-steam-update", 
-        action="store_true", 
-        help="Skip steam download/update step"
-    )
-    parser.add_argument(
-        "--skip-mapper", 
-        action="store_true", 
-        help="Skip mapper creation step"
-    )
-    parser.add_argument(
-        "--skip-batch-export", 
-        action="store_true", 
-        help="Skip batch export step"
-    )
+    argument_writer = ArgumentWriter()
+    argument_writer.add_arguments(parser)
     
     args = parser.parse_args()
     

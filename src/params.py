@@ -14,14 +14,14 @@ from utils import is_truthy
 Central configuration schema to provide a single source of truth for all documentation and functionality of params/args
 """
 
-PARAMETER_SCHEMA = {
+PARAMETERS_SCHEMA = {
     "LOG_LEVEL": {
         "env": "LOG_LEVEL",
         "arg": "--log-level",
         "type": Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         "default": "DEBUG",
         "section": "Logging",
-        "help": "Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL. Default: 'DEBUG'."
+        "help": "Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL."
     },
     "SHOULD_DOWNLOAD_DEPENDENCIES": {
         "env": "SHOULD_DOWNLOAD_DEPENDENCIES",
@@ -38,7 +38,7 @@ PARAMETER_SCHEMA = {
                 "default": False,
                 "section": "Dependencies",
                 "section_reliant_param": "SHOULD_DOWNLOAD_DEPENDENCIES",
-                "help": "Re-download dependencies even if they are already present. Default: False."
+                "help": "Re-download dependencies even if they are already present."
             }
         }
     },
@@ -47,7 +47,7 @@ PARAMETER_SCHEMA = {
         "arg": "--download-steam-game",
         "type": bool,
         "default": True,
-        "help": "Whether to download Steam game files. Default: True.",
+        "help": "Whether to download Steam game files.",
         "section": "Steam Download",
         "section_params": {
             "FORCE_STEAM_DOWNLOAD": {
@@ -77,6 +77,7 @@ PARAMETER_SCHEMA = {
                 "arg": "--steam-password",
                 "type": str,
                 "default": None,
+                "sensitive": True,
                 "help": "Steam password for authentication.",
             },
             "STEAM_GAME_DOWNLOAD_PATH": {
@@ -145,6 +146,33 @@ PARAMETER_SCHEMA = {
         }
     },
 }
+
+class ArgumentWriter:
+    """
+    Helper class to write command line arguments based on PARAMETERS_SCHEMA
+    """
+
+    def __init__(self):
+        self.schema = PARAMETERS_SCHEMA
+
+    def add_arguments(self, parser):
+        def parse_details(details):
+            arg_name = details["arg"]
+            arg_type = details["type"]
+            default = details["default"]
+            help_text = details.get("help", "")
+            if arg_type == bool:
+                parser.add_argument(arg_name, action='store_true', help=help_text + f" (default: {default})")
+            else:
+                parser.add_argument(arg_name, type=arg_type, default=default, help=help_text + f" (default: {default})")
+            
+            # Add section params if any
+            if "section_params" in details:
+                for sub_param, sub_details in details["section_params"].items():
+                    parse_details(sub_details)
+
+        for param, details in self.schema.items():
+            parse_details(details)
 
 class Params:
     """
