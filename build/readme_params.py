@@ -87,31 +87,7 @@ def generate_cli_docs():
 
 
 def generate_by_process_section():
-    """Generate parameter documentation organized by process steps."""
-    
-    # Define the process order and mapping
-    process_steps = [
-        {
-            "title": "Step 1: Dependencies",
-            "description": "Download and update required tools (BatchExport, DepotDownloader)",
-            "sections": ["Dependencies"]
-        },
-        {
-            "title": "Step 2: Steam Download", 
-            "description": "Download/update War Robots Frontiers game files from Steam",
-            "sections": ["Steam Download"]
-        },
-        {
-            "title": "Step 3: Mapping",
-            "description": "Generate mapper file using DLL injection with Dumper-7", 
-            "sections": ["Mapping"]
-        },
-        {
-            "title": "Step 4: Batch Export",
-            "description": "Export game assets to JSON format",
-            "sections": ["Batch Export"]
-        }
-    ]
+    """Generate parameter documentation organized by sections from PARAMETERS_SCHEMA."""
     
     lines = []
     
@@ -128,33 +104,17 @@ def generate_by_process_section():
             for sub_param, sub_details in details["section_params"].items():
                 sections_data[section].append((sub_param, sub_details, True))
     
-    # Add logging first (global configuration)
-    if "Logging" in sections_data:
+    # Generate documentation for each section
+    for section, params in sections_data.items():
         lines.extend([
-            "#### General Configuration",
+            f"### {section}",
             "",
         ])
-        for param_name, details, is_section_param in sections_data["Logging"]:
+        for param_name, details, is_section_param in params:
             add_parameter_doc_to_lines(lines, param_name, details, is_section_param)
         lines.append("")
     
-    # Add process steps
-    for step in process_steps:
-        lines.extend([
-            f"#### {step['title']}",
-            f"*{step['description']}*",
-            "",
-        ])
-        
-        for section_name in step['sections']:
-            if section_name in sections_data:
-                for param_name, details, is_section_param in sections_data[section_name]:
-                    add_parameter_doc_to_lines(lines, param_name, details, is_section_param)
-        lines.append("")
-    
     return "\n".join(lines)
-
-
 
 
 
@@ -273,7 +233,7 @@ def validate_generated_docs():
             
             # Check for expected content
             if filename == "readme_parameters_section.md":
-                if "## Configuration" not in content or "#### General Configuration" not in content:
+                if "## Configuration" not in content or "### Logging" not in content:
                     print(f"⚠️  Warning: {filename} missing expected sections")
                     return False
             

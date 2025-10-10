@@ -65,15 +65,14 @@ python src/run.py
 
 Copy `.env.example` to `.env` and configure the following parameters:
 
-#### General Configuration
+### Logging
 
 - **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
   - Default: `"DEBUG"`
   - Command line: `--log-level`
 
 
-#### Step 1: Dependencies
-*Download and update required tools (BatchExport, DepotDownloader)*
+### Dependencies
 
 - **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
   - Default: `"true"`
@@ -84,8 +83,7 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Command line: `--force-download-dependencies`
 
 
-#### Step 2: Steam Download
-*Download/update War Robots Frontiers game files from Steam*
+### Steam Download
 
 - **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
   - Default: `"true"`
@@ -113,8 +111,7 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Command line: `--steam-game-download-path`
 
 
-#### Step 3: Mapping
-*Generate mapper file using DLL injection with Dumper-7*
+### Mapping
 
 - **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
   - Default: `"true"`
@@ -134,8 +131,7 @@ Copy `.env.example` to `.env` and configure the following parameters:
   - Command line: `--output-mapper-file`
 
 
-#### Step 4: Batch Export
-*Export game assets to JSON format*
+### Batch Export
 
 - **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
   - Default: `"true"`
