@@ -9,7 +9,10 @@ This script orchestrates the complete WRFrontiers data extraction process:
 4. BatchExport - Converts game assets to JSON format
 
 Usage:
-    python run.py [--skip-dependencies] [--skip-steam-update] [--skip-mapper] [--skip-batch-export]
+    python run.py [options]
+
+Example:
+    python run.py --help
 """
 
 import sys
@@ -248,30 +251,9 @@ def validate_environment(params):
         return False
 
 
-def main(log_level=None, force_download_dependencies=None, manifest_id=None, force_steam_download=None, 
-         steam_username=None, steam_password=None, steam_game_download_path=None, dumper7_output_dir=None,
-         output_mapper_file=None, force_get_mapper=None, output_data_dir=None, force_export=None,
-         skip_dependencies=False, skip_steam_update=False, skip_mapper=False, skip_batch_export=False):
+def main(args):
     """
     Main function to run the complete WRFrontiers-Exporter process.
-    
-    Args:
-        log_level (str): Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        force_download_dependencies (bool): Force re-download of dependencies
-        manifest_id (str): Specific Steam manifest ID to download
-        force_steam_download (bool): Force re-download of Steam files
-        steam_username (str): Steam username for authentication
-        steam_password (str): Steam password for authentication
-        steam_game_download_path (str): Path where the game will be downloaded
-        dumper7_output_dir (str): Path to Dumper-7's output folder
-        output_mapper_file (str): Where the generated mapper file will be saved
-        force_get_mapper (bool): Force regeneration of mapper file
-        output_data_dir (str): Path where the output JSON will be saved
-        force_export (bool): Force re-export of game data
-        skip_dependencies (bool): Skip dependency manager step
-        skip_steam_update (bool): Skip steam download/update step
-        skip_mapper (bool): Skip mapper creation step
-        skip_batch_export (bool): Skip batch export step
         
     Returns:
         bool: True if all steps completed successfully, False otherwise
@@ -284,12 +266,7 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
         logger.info("=" * 80)
         
         # Initialize parameters with provided arguments
-        params = init_params(log_level=log_level, force_download_dependencies=force_download_dependencies,
-                           manifest_id=manifest_id, force_steam_download=force_steam_download,
-                           steam_username=steam_username, steam_password=steam_password,
-                           steam_game_download_path=steam_game_download_path, dumper7_output_dir=dumper7_output_dir,
-                           output_mapper_file=output_mapper_file, force_get_mapper=force_get_mapper,
-                           output_data_dir=output_data_dir, force_export=force_export)
+        params = init_params(args)
         
         # Validate environment
         if not validate_environment(params):
@@ -297,7 +274,7 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
             return False
         
         # Step 1: Dependency Manager
-        if not skip_dependencies:
+        if params.should_download_dependencies:
             if not run_dependency_manager(params):
                 logger.error("Dependency manager failed. Cannot continue.")
                 return False
@@ -305,7 +282,7 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
             logger.info("Skipping dependency manager step...")
         
         # Step 2: Steam Download/Update
-        if not skip_steam_update:
+        if params.should_download_steam_game:
             if not run_steam_download_update(params):
                 logger.error("Steam download/update failed. Cannot continue.")
                 return False
@@ -314,7 +291,7 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
         
         # Step 3: Mapper Creation
         mapper_file_path = None
-        if not skip_mapper:
+        if params.should_get_mapper:
             mapper_file_path = run_mapper_creation(params)
             if not mapper_file_path:
                 logger.error("Mapper creation failed. Cannot continue.")
@@ -323,7 +300,7 @@ def main(log_level=None, force_download_dependencies=None, manifest_id=None, for
             logger.info("Skipping mapper creation step...")
         
         # Step 4: BatchExport
-        if not skip_batch_export:
+        if params.should_batch_export:
             # If skipped mapper creation, use the expected output path
             mapper_file_path = params.output_mapper_file
             if not os.path.exists(mapper_file_path):
@@ -384,24 +361,7 @@ Quick Examples:
     args = parser.parse_args()
     
     # Run the main process with parsed arguments
-    success = main(
-        log_level=args.log_level,
-        force_download_dependencies=args.force_download_dependencies,
-        manifest_id=args.manifest_id,
-        force_steam_download=args.force_steam_download,
-        steam_username=args.steam_username,
-        steam_password=args.steam_password,
-        steam_game_download_path=args.steam_game_download_path,
-        dumper7_output_dir=args.dumper7_output_dir,
-        output_mapper_file=args.output_mapper_file,
-        force_get_mapper=args.force_get_mapper,
-        output_data_dir=args.output_data_dir,
-        force_export=args.force_export,
-        skip_dependencies=args.skip_dependencies,
-        skip_steam_update=args.skip_steam_update,
-        skip_mapper=args.skip_mapper,
-        skip_batch_export=args.skip_batch_export
-    )
+    success = main(args)
     
     # Exit with appropriate code
     sys.exit(0 if success else 1)
