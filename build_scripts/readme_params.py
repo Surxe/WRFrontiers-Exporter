@@ -92,12 +92,7 @@ def add_parameter_doc_to_lines(lines, param_name, details, is_section_param=Fals
 def generate_full_parameter_section():
     """Generate the complete parameter documentation section."""
     
-    lines = [
-        "## Configuration",
-        "",
-        "Copy `.env.example` to `.env` and configure the following parameters:",
-        "",
-    ]
+    lines = []
     
     # Add process-organized documentation
     lines.append(generate_by_process_section())
@@ -148,7 +143,7 @@ def validate_generated_docs():
             
             # Check for expected content
             if filename == "readme_parameters_section.md":
-                if "## Configuration" not in content or "### Logging" not in content:
+                if "### Logging" not in content:
                     print(f"Warning: {filename} missing expected sections")
                     return False
             
