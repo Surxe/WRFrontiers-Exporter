@@ -108,6 +108,7 @@ def generate_full_parameter_section():
 def write_parameter_docs():
     """Write parameter documentation to files."""
     build_dir = Path(__file__).parent.parent / ".temp"
+    os.makedirs(build_dir, exist_ok=True)
     
     # Generate different formats
     full_section = generate_full_parameter_section()

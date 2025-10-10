@@ -64,7 +64,6 @@ def main():
         print(f"SUCCESS: All {total_scripts} build scripts completed!")
         print("\nGenerated/Updated Files:")
         print("   .env.example - Environment configuration template")
-        print("   build/readme_*.md - Parameter documentation components") 
         print("   README.md - Updated with current parameter documentation")
         return True
     else:

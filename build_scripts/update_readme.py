@@ -5,6 +5,7 @@ Helper script to update README.md with generated parameter documentation.
 
 import re
 from pathlib import Path
+import os
 
 def update_readme_with_markers():
     """Update README.md content between markers."""
@@ -12,6 +13,7 @@ def update_readme_with_markers():
     repo_root = Path(__file__).parent.parent
     readme_path = repo_root / "README.md"
     params_doc_path = Path(__file__).parent.parent / ".temp" / "readme_parameters_section.md"
+    os.makedirs(params_doc_path.parent, exist_ok=True)
     
     if not readme_path.exists():
         print("README.md not found")
