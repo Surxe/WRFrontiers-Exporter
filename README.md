@@ -57,7 +57,6 @@ cp .env.example .env
 
 4. Run the exporter:
 ```bash
-cd C:/path/to/repository
 python src/run.py --help
 ```
 
