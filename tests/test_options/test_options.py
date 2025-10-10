@@ -9,13 +9,13 @@ from unittest.mock import patch, Mock
 src_path = os.path.join(os.path.dirname(__file__), '..', '..', 'src')
 sys.path.insert(0, src_path)
 
-# Import directly from the src.utils module to avoid conflicts with tests.utils
+# Import directly from the src.options module to avoid conflicts with tests.utils
 import importlib.util
-spec = importlib.util.spec_from_file_location("src_utils", os.path.join(src_path, "utils.py"))
-src_utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(src_utils)
+spec = importlib.util.spec_from_file_location("src_options", os.path.join(src_path, "options.py"))
+src_options = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(src_options)
 
-Options = src_utils.Options
+Options = src_options.Options
 
 
 class TestOptions(unittest.TestCase):
