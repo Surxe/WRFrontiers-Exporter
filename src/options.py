@@ -73,10 +73,10 @@ class Options:
             args_dict = {}
 
         # Process the schema to set all attributes
-        combined_args_and_options = self._process_schema(OPTIONS_SCHEMA, args_dict)
+        options = self._process_schema(OPTIONS_SCHEMA, args_dict)
 
         # Set attributes dynamically
-        for key, value in combined_args_and_options.items():
+        for key, value in options.items():
             setattr(self, key, value)
             logger.debug(f"Set attribute {key} to value: {value}")
 
@@ -101,12 +101,12 @@ class Options:
         self.log()
 
     def _process_schema(self, schema, args_dict):
-        """Process the option schema and set instance attributes."""
+        """Process the option schema, env params, and args to get the combined options."""
 
         print("Processing schema with args_dict:", args_dict)
 
         # Combine args and options
-        combined_args_and_options = {}
+        options = {}
 
         def process_option(option_name, details):
             # Convert arg name to attribute name (remove -- and convert - to _)
@@ -141,7 +141,7 @@ class Options:
                 value = details["default"]
             
             # Store
-            combined_args_and_options[option_name] = value
+            options[option_name] = value
         
         # Process all options in the schema
         for option_name, details in schema.items():
@@ -152,30 +152,30 @@ class Options:
                 for sub_option, sub_details in details["section_options"].items():
                     process_option(sub_option, sub_details)
 
-        # If none of the --should-x args/options are in combined_args_and_options, default all to true for ease of use
+        # If none of the should-x options are in options, default all to true for ease of use
         should_option_keys = [k for k in OPTIONS_SCHEMA if k != 'LOG_LEVEL']
-        if not any(key in combined_args_and_options for key in should_option_keys):
+        if not any(key in options for key in should_option_keys):
             for key in should_option_keys:
-                combined_args_and_options[key] = True
-            logger.debug("No --should-x args/options provided, defaulting all to True")
+                options[key] = True
+            logger.debug("No --should-x args provided, defaulting all to True")
             
         # If a --should-x is true, ensure options under its schema's section_options are provided (meaning not defaulted to None)
         missing_options = []
         for key in should_option_keys:
-            if combined_args_and_options.get(key) is True:
+            if options.get(key) is True:
                 section_options = OPTIONS_SCHEMA[key].get("section_options", {})
                 section = OPTIONS_SCHEMA[key]["section"]
                 if section_options:
                     logger.debug(f"{key} is True, ensuring section_options for section {section} are provided")
                 for sub_option in section_options:
-                    if combined_args_and_options.get(sub_option) is None:
+                    if options.get(sub_option) is None:
                         missing_options.append(sub_option)
-                    logger.debug(f"Section option {sub_option} is set to {combined_args_and_options[sub_option]}")
+                    logger.debug(f"Section option {sub_option} is set to {options[sub_option]}")
 
         if missing_options:
             raise ValueError(f"The following options must be provided when their section's --should-x is true: {', '.join(missing_options)}")
 
-        return combined_args_and_options
+        return options
 
     def validate(self):
         """

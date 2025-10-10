@@ -60,7 +60,7 @@ cp .env.example .env
 python src/run.py --help
 ```
 
-## Configuration
+## Options
 
 ### Command Line Argument Usage
 
@@ -71,9 +71,9 @@ python src/run.py                       # Run all steps with default/env values
 python src/run.py --log-level INFO      # Run all steps with default/env values, except with LOG_LEVEL INFO
 ```
 
-### Options
+### Parameters
 
-Copy `.env.example` to `.env` and configure the following options, unless they will be provided as arguments at runtime:
+Copy `.env.example` to `.env` and configure the following parameters, unless they will be provided as arguments at runtime:
 
 <!-- BEGIN_GENERATED_OPTIONS -->
 #### Logging
@@ -135,7 +135,7 @@ Copy `.env.example` to `.env` and configure the following options, unless they w
 * **DUMPER7_OUTPUT_DIR** - Path to the where Dumper7 outputs its generated SDK.
   - Default: None - required if section enabled
   - Command line: `--dumper7-output-dir`
-  - If unsure where this is, it is likely C:/Dumper-7. Confirm by running the mapper, letting it fail, and checking for the dir.
+  - If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.
 
 * **OUTPUT_MAPPER_FILE** - Path to save the generated mapping file (.usmap) at. Should end in .usmap
   - Default: None - required if section enabled

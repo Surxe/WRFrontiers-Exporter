@@ -217,7 +217,7 @@ class TestTerminateProcessByName(unittest.TestCase):
         """Test terminating empty process name on Windows."""
         mock_result = Mock()
         mock_result.returncode = 1
-        mock_result.stderr = "ERROR: Invalid argument/option - ''."
+        mock_result.stderr = "ERROR: Invalid option - ''."
         mock_subprocess_run.return_value = mock_result
         
         result = terminate_process_by_name("")
