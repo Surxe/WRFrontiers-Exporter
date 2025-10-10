@@ -71,7 +71,7 @@ python src/run.py                       # Run all steps with default/env values
 python src/run.py --log-level INFO      # Run all steps with default/env values, except with LOG_LEVEL INFO
 ```
 
-### Parameters
+### Options
 
 Copy `.env.example` to `.env` and configure the following parameters, unless they will be provided as arguments at runtime:
 
@@ -155,9 +155,15 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 * **OUTPUT_DATA_DIR** - Path to save the exported assets to.
   - Default: None
   - Command line: `--output-data-dir`
-
-
 <!-- END_GENERATED_PARAMS -->
+### Miscellaneous Option Behavior
+
+* An option's value is determined by the following priority, in descending order
+  * Argument
+  * Parameter
+  * Default
+* If all options prefixed with `SHOULD_` are defaulted to `False`, they are instead all defaulted to `True` for ease of use
+* Options are only required if their section's `SHOULD_` option is `True`
 
 ## Requirements
 

@@ -152,13 +152,29 @@ class Params:
                 for sub_param, sub_details in details["section_params"].items():
                     process_param(sub_param, sub_details)
 
-    
         # If none of the --should-x args/params are in combined_args_and_params, default all to true for ease of use
         should_param_keys = [k for k in PARAMETERS_SCHEMA if k != 'LOG_LEVEL']
         if not any(key in combined_args_and_params for key in should_param_keys):
             for key in should_param_keys:
                 combined_args_and_params[key] = True
             logger.debug("No --should-x args/params provided, defaulting all to True")
+            
+        # If a --should-x is true, ensure params under its schema's section_params are provided (meaning not defaulted to None)
+        missing_params = []
+        for key in should_param_keys:
+            if combined_args_and_params.get(key) is True:
+                section_params = PARAMETERS_SCHEMA[key].get("section_params", {})
+                section = PARAMETERS_SCHEMA[key]["section"]
+                if section_params:
+                    logger.debug(f"{key} is True, ensuring section_params for section {section} are provided")
+                for sub_param in section_params:
+                    if combined_args_and_params.get(sub_param) is None:
+                        missing_params.append(sub_param)
+                    logger.debug(f"Section param {sub_param} is set to {combined_args_and_params[sub_param]}")
+
+        if missing_params:
+            raise ValueError(f"The following parameters must be provided when their section's --should-x is true: {', '.join(missing_params)}")
+
         return combined_args_and_params
 
     def validate(self):
