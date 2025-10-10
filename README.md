@@ -57,14 +57,27 @@ cp .env.example .env
 
 4. Run the exporter:
 ```bash
-python src/run.py
+cd C:/path/to/repository
+python src/run.py --help
 ```
 
-<!-- BEGIN_GENERATED_PARAMS -->
+
 ## Configuration
 
-Copy `.env.example` to `.env` and configure the following parameters:
+### Command Line Argument Usage
 
+For each parameter, the command line argument may be used at runtime instead of providing it in the `.env`.
+
+```bash
+python src/run.py                       # Run all steps with default/env values
+python src/run.py --log-level INFO      # Run all steps with default/env values, except with LOG_LEVEL INFO
+```
+
+### Parameters
+
+Copy `.env.example` to `.env` and configure the following parameters, unless they will be provided as arguments at runtime:
+
+<!-- BEGIN_GENERATED_PARAMS -->
 ### Logging
 
 - **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
@@ -148,35 +161,6 @@ Copy `.env.example` to `.env` and configure the following parameters:
 
 <!-- END_GENERATED_PARAMS -->
 
-## Command Line Usage
-
-### Basic Usage
-```bash
-python src/run.py                           # Run all steps with default/env values
-```
-
-### Parameter Override Examples
-```bash
-python src/run.py --log-level INFO          # Set log level
-python src/run.py --manifest-id 1234567890 --force-steam-download   # Download specific manifest version
-python src/run.py --steam-username user --steam-password pass       # Override Steam credentials
-python src/run.py --force-download-dependencies --force-export      # Force all downloads and exports
-```
-
-### Skip Specific Steps
-```bash
-python src/run.py --skip-dependencies      # Skip dependency check/update
-python src/run.py --skip-steam-update      # Skip steam game download/update
-python src/run.py --skip-mapper            # Skip mapper file creation
-python src/run.py --skip-batch-export      # Skip batch export to JSON
-```
-
-### Run Only Specific Steps
-```bash
-python src/run.py --skip-dependencies --skip-steam-update    # Only mapper + export
-python src/run.py --skip-mapper --skip-batch-export          # Only deps + steam
-```
-
 ## Requirements
 
 - Python 3.7+
@@ -244,6 +228,9 @@ python src/run.py --log-level DEBUG
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+* After making changes to `src/params_schema.py`, rerun `build_scripts/build_docs.py` to rebuild the `.env.example` and `README.md`
+* Follow standards set by `STANDARDS.md` (barebones atm)
 
 ## Disclaimer
 
