@@ -47,6 +47,7 @@ def main():
     
     # First, let's just run the update script since we already have the generated files
     scripts_to_run = [
+        "readme_params.py",  # Generate parameter docs
         "update_readme.py"     # Update README.md with generated content
     ]
     

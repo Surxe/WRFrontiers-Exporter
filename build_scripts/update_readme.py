@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """
 Helper script to update README.md with generated parameter documentation.
-
-Usage:
-    python build/update_readme.py
 """
 
 import re
@@ -14,14 +11,14 @@ def update_readme_with_markers():
     
     repo_root = Path(__file__).parent.parent
     readme_path = repo_root / "README.md"
-    params_doc_path = Path(__file__).parent / "readme_parameters_section.md"
+    params_doc_path = Path(__file__).parent.parent / ".temp" / "readme_parameters_section.md"
     
     if not readme_path.exists():
         print("README.md not found")
         return False
     
     if not params_doc_path.exists():
-        print("Generated parameter docs not found. Run build/readme_params.py first.")
+        print("Generated parameter docs not found. Run readme_params.py first.")
         return False
     
     # Read files
@@ -52,6 +49,9 @@ def update_readme_with_markers():
     # Write updated README
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(new_readme_content)
+
+    # Remove the temporary params doc file
+    params_doc_path.unlink(missing_ok=True)
     
     print("Successfully updated README.md with generated parameter documentation")
     return True

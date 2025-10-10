@@ -23,7 +23,7 @@ class DependencyManager:
     
     def __init__(self):
         """Initialize the dependency manager."""
-        self.temp_dir = Path.cwd() / ".temp_downloads"
+        self.temp_dir = Path.cwd() / ".temp"
         self.temp_dir.mkdir(exist_ok=True)
     
     def _get_installed_version(self, output_path):
