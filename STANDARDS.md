@@ -10,8 +10,9 @@
 ### Path Variable Naming
 * **Folder Path** → `dir` (e.g., `output_dir`, `steam_dir`, `logs_dir`)
 * **File Path**
-  * **Executable File** → `cmd` (e.g., `depot_downloader_cmd`)
-  * **Other File** → `file` (e.g., `log_file`, `mapper_file`, `version_file`)
+  * **Executable File Path** → `cmd` (e.g., `depot_downloader_cmd`)
+  * **Other File Path** → `file` (e.g., `log_file`, `mapper_file`, `version_file`)
+* **Path** - Generic - Ideally is changed to either dir, cmd, or file
 
 ### Function/Method Naming
 * **Private methods** - Methods that use (not just have) `self` arg. Prefixed with `_` (e.g., `_process_schema`, `_download_file`, `_validate_zip_file`)
