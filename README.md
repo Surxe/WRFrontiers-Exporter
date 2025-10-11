@@ -20,7 +20,7 @@ WRFrontiers-Exporter orchestrates a complete 4-step process to extract and conve
 
 ### 2. Steam Download/Update  
 - Runs `run_depot_downloader` to download/update the latest War Robots Frontiers game version from Steam
-- Download is saved at `STEAM_GAME_DOWNLOAD_PATH`
+- Download is saved at `STEAM_GAME_DOWNLOAD_DIR`
 - Supports downloading specific manifest versions or latest version
 - Uses Steam credentials for authentication
 
@@ -117,7 +117,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Default: None - required if section enabled
   - Command line: `--steam-password`
 
-* **STEAM_GAME_DOWNLOAD_PATH** - Path to the local Steam game installation directory.
+* **STEAM_GAME_DOWNLOAD_DIR** - Path to the local Steam game installation directory.
   - Default: None - required if section enabled
   - Command line: `--steam-game-download-path`
 

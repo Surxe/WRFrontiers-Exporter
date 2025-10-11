@@ -83,8 +83,8 @@ OPTIONS_SCHEMA = {
                 "sensitive": True,
                 "help": "Steam password for authentication.",
             },
-            "STEAM_GAME_DOWNLOAD_PATH": {
-                "env": "STEAM_GAME_DOWNLOAD_PATH",
+            "STEAM_GAME_DOWNLOAD_DIR": {
+                "env": "STEAM_GAME_DOWNLOAD_DIR",
                 "arg": "--steam-game-download-path",
                 "type": Path,
                 "default": None,

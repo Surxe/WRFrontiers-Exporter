@@ -71,7 +71,7 @@ class TestInitOptions(unittest.TestCase):
             force_steam_download=True,
             steam_username="testuser",
             steam_password="testpass",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
@@ -91,7 +91,7 @@ class TestInitOptions(unittest.TestCase):
         self.assertTrue(options.force_steam_download)
         self.assertEqual(options.steam_username, "testuser")
         self.assertEqual(options.steam_password, "testpass")
-        self.assertEqual(str(options.steam_game_download_path), self.steam_dir)
+        self.assertEqual(str(options.steam_game_download_dir), self.steam_dir)
         self.assertTrue(options.should_get_mapper)
         self.assertEqual(str(options.dumper7_output_dir), self.dumper_dir)
         self.assertEqual(str(options.output_mapper_file), mapper_file)
@@ -178,7 +178,7 @@ class TestInitOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
@@ -198,7 +198,7 @@ class TestInitOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
@@ -221,7 +221,7 @@ class TestInitOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test", 
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
@@ -244,7 +244,7 @@ class TestInitOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="partialtest",
             steam_password="partialpass",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),

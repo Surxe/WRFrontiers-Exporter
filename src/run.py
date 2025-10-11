@@ -89,10 +89,10 @@ def run_steam_download_update(options):
         from steam.run_depot_downloader import DepotDownloader
         
         logger.info("Running DepotDownloader to download/update War Robots Frontiers...")
-        logger.info(f"Target download path: {options.steam_game_download_path}")
+        logger.info(f"Target download path: {options.steam_game_download_dir}")
         
         downloader = DepotDownloader(
-            wrf_dir=options.steam_game_download_path,
+            wrf_dir=options.steam_game_download_dir,
             steam_username=options.steam_username,
             steam_password=options.steam_password,
             force=options.force_steam_download,
@@ -139,7 +139,7 @@ def run_mapper_creation(options):
         from mapper.get_mapper import main as mapper_main
         
         logger.info("Running DLL injection to create mapper file...")
-        logger.info(f"Steam game download path: {options.steam_game_download_path}")
+        logger.info(f"Steam game download path: {options.steam_game_download_dir}")
         logger.info(f"Dumper-7 output directory: {options.dumper7_output_dir}")
         logger.info(f"Output mapper file: {options.output_mapper_file}")
         
@@ -199,7 +199,7 @@ def run_batch_export(options, mapper_file_path):
         
         logger.info("Running BatchExport to convert game assets to JSON...")
         logger.info(f"Using mapper file: {mapper_file_path}")
-        logger.info(f"Source PAK files: {options.steam_game_download_path}")
+        logger.info(f"Source PAK files: {options.steam_game_download_dir}")
         logger.info(f"Output JSON directory: {options.output_data_dir}")
         
         result = batchexport_main(options, mapper_file_path)
