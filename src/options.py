@@ -15,6 +15,7 @@ Central configuration schema to provide a single source of truth for all documen
 """
 
 from options_schema import OPTIONS_SCHEMA
+from argparse import ArgumentParser, Namespace
 
 class ArgumentWriter:
     """
@@ -24,8 +25,8 @@ class ArgumentWriter:
     def __init__(self):
         self.schema = OPTIONS_SCHEMA
 
-    def add_arguments(self, parser):
-        def parse_details(details):
+    def add_arguments(self, parser: ArgumentParser):
+        def parse_details(details: dict):
             arg_name = details["arg"]
             arg_type = details["type"]
             default = details["default"]
@@ -59,7 +60,7 @@ class Options:
     """
     A class to hold options for the application.
     """
-    def __init__(self, args=None):
+    def __init__(self, args: Namespace | None = None):
 
         # Initialize all options in the following preference
         # 1. Direct args (if provided)
@@ -106,7 +107,7 @@ class Options:
         
         self.log()
 
-    def _process_schema(self, schema, args_dict):
+    def _process_schema(self, schema: dict, args_dict: dict):
         """Process the option schema, env params, and args to get the combined options."""
 
         print("Processing schema with args_dict:", args_dict)
@@ -114,7 +115,7 @@ class Options:
         # Combine args and options
         options = {}
 
-        def process_option(option_name, details):
+        def process_option(option_name: str, details: dict):
             # Convert arg name to attribute name (remove -- and convert - to _)
             attr_name = details["arg"].lstrip('--').replace('-', '_')
             
@@ -166,7 +167,7 @@ class Options:
 
         return options
     
-    def validate(self, options):
+    def validate(self, options: dict):
         # If a root option is true, ensure its sub-options are provided (meaning not defaulted to None)
         for root_option in self.root_options:
             missing_options = []
@@ -190,7 +191,7 @@ class Options:
         # Dynamically log all attributes that were set from the schema
         log_lines = ["Options initialized with:"]
         
-        def log_option(option_name, details):
+        def log_option(option_name: str, details: dict):
             attr_name = details["arg"].lstrip('--').replace('-', '_')
             if hasattr(self, attr_name):
                 value = getattr(self, attr_name)
@@ -209,12 +210,9 @@ class Options:
                     log_option(sub_option, sub_details)
         
         logger.info("\n".join(log_lines))
-
-    def __str__(self):
-        return f"Options(export_path={self.export_path}, game_name={self.game_name}, log_level={self.log_level})"
     
 # Helper to initialize OPTIONS with direct args if available
-def init_options(args=None):
+def init_options(args: Namespace | None = None):
     global OPTIONS
     OPTIONS = Options(args)
     return OPTIONS
