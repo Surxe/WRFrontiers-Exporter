@@ -5,7 +5,8 @@ import time
 import shutil
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils import init_params, Params, clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
+from options import init_options
+from utils import clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
 from mapper.simple_injector import inject_dll_into_process
 from loguru import logger
 import subprocess
@@ -18,23 +19,22 @@ def get_dll_path():
     return dll_path
 
 
-def get_mapping_file_path(params=None):
+def get_mapping_file_path(options=None):
     """
     Get the path to the mapping file by running the complete mapper process.
-    The returned path will be the final output location (params.output_mapper_file) 
+    The returned path will be the final output location (options.output_mapper_file) 
     if copying is successful, otherwise the original extracted location.
     
     Args:
-        params (Params, optional): Parameters object. If None, will initialize from default params.
+        options (Options, optional): Options object. If None, will initialize from default options.
         
     Returns:
         str: Path to the mapping file (preferably at the output location)
     """
-    if params is None:
-        from utils import init_params
-        params = init_params()
+    if options is None:
+        options = init_options()
     
-    return main(params)
+    return main(options)
 
 
 def find_existing_mapping_file(dumper7_output_dir):
@@ -140,10 +140,10 @@ def launch_game_process(shipping_cmd_path):
     Returns:
         subprocess.Popen: The game process object
     """
-    launch_game_params = [shipping_cmd_path]
+    launch_game_options = [shipping_cmd_path]
     
     # Use subprocess.Popen directly to start game with normal window behavior
-    game_process = subprocess.Popen(launch_game_params)
+    game_process = subprocess.Popen(launch_game_options)
     logger.info(f"Game process started with PID: {game_process.pid}")
     
     # Check if the process started successfully
@@ -201,26 +201,26 @@ def perform_dll_injection(game_process_name, dll_path):
     return injection_success
 
 
-def main(params=None):
-    if params is None:
-        raise ValueError("Params must be provided")
+def main(options=None):
+    if options is None:
+        raise ValueError("Options must be provided")
 
     # Check if mapper file already exists and force is False
-    if os.path.exists(params.output_mapper_file) and not params.force_get_mapper:
-        logger.info(f"Mapper file already exists at {params.output_mapper_file} and FORCE_GET_MAPPER is False. Skipping mapper creation.")
-        return params.output_mapper_file
+    if os.path.exists(options.output_mapper_file) and not options.force_get_mapper:
+        logger.info(f"Mapper file already exists at {options.output_mapper_file} and FORCE_GET_MAPPER is False. Skipping mapper creation.")
+        return options.output_mapper_file
 
     # Construct shipping executable path from steam download path
-    shipping_cmd_path = os.path.join(params.steam_game_download_path, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
+    shipping_cmd_path = os.path.join(options.steam_game_download_path, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
     
     # Validate that the shipping executable exists
     if not os.path.exists(shipping_cmd_path):
-        raise ValueError(f"Shipping executable not found at: {shipping_cmd_path}. Please ensure the game is downloaded to {params.steam_game_download_path}")
+        raise ValueError(f"Shipping executable not found at: {shipping_cmd_path}. Please ensure the game is downloaded to {options.steam_game_download_path}")
     
     game_process_name = os.path.basename(shipping_cmd_path)
 
-    logger.info(f"Clearing Dumper-7 output directory: {params.dumper7_output_dir}")
-    clear_dir(params.dumper7_output_dir)  # Clear Dumper-7 output directory before starting the game to ensure only new dumps are present
+    logger.info(f"Clearing Dumper-7 output directory: {options.dumper7_output_dir}")
+    clear_dir(options.dumper7_output_dir)  # Clear Dumper-7 output directory before starting the game to ensure only new dumps are present
 
     # Launch the game normally (with window/UI) but don't wait for it to complete
     logger.info("Starting game process with UI...")
@@ -252,7 +252,7 @@ def main(params=None):
         has_terminated = True
 
         logger.warning("DLL injection says it failed, but it could be incorrect. Checking if the mapping file was created...")
-        mapping_file_path = get_mapper_from_sdk(params.dumper7_output_dir)
+        mapping_file_path = get_mapper_from_sdk(options.dumper7_output_dir)
         if mapping_file_path is None:
             logger.error("DLL injection failed and mapping file was not created. Cannot continue.")
             raise e
@@ -262,23 +262,23 @@ def main(params=None):
 
     if mapping_file_path is None:
         # If we didn't already get the mapper file path from the exception handler, try to get it now 
-        mapping_file_path = get_mapper_from_sdk(params.dumper7_output_dir)
+        mapping_file_path = get_mapper_from_sdk(options.dumper7_output_dir)
 
     # Copy the mapper file to the output path with the desired filename
     if not mapping_file_path:
         raise Exception("Mapper file path could not be determined after SDK creation")
     
     # Ensure the parent directory exists
-    parent_dir = os.path.dirname(params.output_mapper_file)
+    parent_dir = os.path.dirname(options.output_mapper_file)
     os.makedirs(parent_dir, exist_ok=True)
     
     # Copy the mapper file to the specified path and filename
-    # This will use the filename from params.output_mapper_file, not the original extracted filename
-    shutil.copy2(mapping_file_path, params.output_mapper_file)
-    logger.info(f"Mapper file copied from {mapping_file_path} to {params.output_mapper_file}")
+    # This will use the filename from options.output_mapper_file, not the original extracted filename
+    shutil.copy2(mapping_file_path, options.output_mapper_file)
+    logger.info(f"Mapper file copied from {mapping_file_path} to {options.output_mapper_file}")
 
-    return params.output_mapper_file
+    return options.output_mapper_file
 
 if __name__ == '__main__':
-    params = init_params()
-    main(params)
+    options = init_options()
+    main(options)

@@ -5,7 +5,8 @@ import time
 from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils import init_params, Params, run_process
+from options import init_options
+from utils import run_process
 from loguru import logger
 
 """
@@ -23,25 +24,25 @@ class BatchExporter:
     """
     A class to handle batch exporting of game assets using the CUE4P BatchExport tool.
     
-    This class manages the execution of BatchExport.exe with the appropriate parameters
+    This class manages the execution of BatchExport.exe with the appropriate options
     for extracting War Robots Frontiers game data from .pak files to JSON format.
     """
     
-    def __init__(self, params=None, mapping_file_path=None):
+    def __init__(self, options=None, mapping_file_path=None):
         """
         Initialize the BatchExporter.
         
         Args:
-            params (Params, optional): Params object containing configuration. If None, will create default.
+            options (Options, optional): Options object containing configuration. If None, will create default.
             mapping_file_path (str): Path to the mapping file for UE4 assets (required)
         """
-        if params is None:
-            params = init_params()
+        if options is None:
+            options = init_options()
         
         if mapping_file_path is None:
             raise ValueError("mapping_file_path is required for BatchExporter")
         
-        self.params = params
+        self.options = options
         self.mapping_file_path = mapping_file_path
         
         # Path to BatchExport executable
@@ -52,10 +53,10 @@ class BatchExporter:
         self.command = [
             str(self.executable_path),
             "--preset", "WarRobotsFrontiers",
-            "--pak-files-directory", self.params.steam_game_download_path,
-            "--export-output-path", self.params.output_data_dir,
+            "--pak-files-directory", self.options.steam_game_download_path,
+            "--export-output-path", self.options.output_data_dir,
             "--mapping-file-path", self.mapping_file_path,
-            "--is-logging-enabled", "true" if self.params.log_level == "DEBUG" else "false"
+            "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false"
         ]
         
         # Validate paths
@@ -69,15 +70,15 @@ class BatchExporter:
                 "Please run install_batch_export.sh first to download it."
             )
         
-        if not os.path.exists(self.params.steam_game_download_path):
+        if not os.path.exists(self.options.steam_game_download_path):
             raise FileNotFoundError(
-                f"Steam game download path not found: {self.params.steam_game_download_path}. "
+                f"Steam game download path not found: {self.options.steam_game_download_path}. "
                 "Please ensure STEAM_GAME_DOWNLOAD_PATH is set correctly in your environment."
             )
         
         # Create output data directory if it doesn't exist
-        os.makedirs(self.params.output_data_dir, exist_ok=True)
-        logger.info(f"Ensured output data directory exists: {self.params.output_data_dir}")
+        os.makedirs(self.options.output_data_dir, exist_ok=True)
+        logger.info(f"Ensured output data directory exists: {self.options.output_data_dir}")
         
         # Ensure its parent dir exists, but not the file
         parent_dir = os.path.dirname(self.mapping_file_path)
@@ -89,7 +90,7 @@ class BatchExporter:
     
     def run(self):
         """
-        Execute BatchExport with the configured parameters.
+        Execute BatchExport with the configured options.
         
         Returns:
             None: The process completes successfully or raises an exception
@@ -100,14 +101,14 @@ class BatchExporter:
         logger.info("Starting BatchExport process...")
         logger.info(f"Using mapping file: {self.mapping_file_path}")
         logger.info(f"Executing BatchExport with command: {str(self)}")
-        logger.info(f"PAK files directory: {self.params.steam_game_download_path}")
-        logger.info(f"Export output path: {self.params.output_data_dir}")
+        logger.info(f"PAK files directory: {self.options.steam_game_download_path}")
+        logger.info(f"Export output path: {self.options.output_data_dir}")
         
         try:
             # Execute BatchExport using run_process from utils
             # run_process handles logging, timeouts, and error handling internally
             run_process(
-                params=self.command,
+                options=self.command,
                 name="BatchExport",
                 timeout=3600  # 1 hour timeout
             )
@@ -124,27 +125,27 @@ class BatchExporter:
         return ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in self.command)
 
 
-def main(params=None, mapping_file_path=None):
+def main(options=None, mapping_file_path=None):
     """
-    Main function to run BatchExport with the given parameters.
+    Main function to run BatchExport with the given options.
     
     Args:
-        params (Params, optional): Configuration parameters
+        options (Options, optional): Configuration options
         mapping_file_path (str): Path to the mapping file (required)
     """
-    if params is None:
-        raise ValueError("Params must be provided")
+    if options is None:
+        raise ValueError("Options must be provided")
     
     if mapping_file_path is None:
         raise ValueError("mapping_file_path must be provided")
     
     # Check if export directory has contents and force is False
-    if os.path.exists(params.output_data_dir) and os.listdir(params.output_data_dir) and not params.force_export:
-        logger.info(f"Export directory {params.output_data_dir} already has contents and FORCE_EXPORT is False. Skipping batch export.")
+    if os.path.exists(options.output_data_dir) and os.listdir(options.output_data_dir) and not options.force_export:
+        logger.info(f"Export directory {options.output_data_dir} already has contents and FORCE_EXPORT is False. Skipping batch export.")
         return True
     
     try:
-        batch_exporter = BatchExporter(params, mapping_file_path)
+        batch_exporter = BatchExporter(options, mapping_file_path)
         
         # Show command preview
         logger.info(f"Command to execute: {str(batch_exporter)}")
@@ -162,6 +163,6 @@ def main(params=None, mapping_file_path=None):
 
 if __name__ == "__main__":
     import sys
-    params = init_params()
+    options = init_options()
     
-    main(params, params.output_mapper_file)
+    main(options, options.output_mapper_file)

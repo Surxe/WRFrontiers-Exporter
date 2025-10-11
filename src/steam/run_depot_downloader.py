@@ -1,7 +1,8 @@
 import os
 import shutil
 from loguru import logger
-from utils import run_process, init_params, Params
+from options import init_options
+from utils import run_process
 
 APP_ID = '1491000'  # war robots: frontier's app_id
 DEPOT_ID = '1491005'  # the big depot
@@ -42,7 +43,7 @@ class DepotDownloader:
     def _download(self, manifest_id):
         logger.debug(f'Downloading game with manifest id {manifest_id}')
 
-        subprocess_params = [
+        subprocess_options = [
             os.path.join(self.depot_downloader_cmd_path),
             '-app', self.app_id,
             '-depot', self.depot_id,
@@ -52,7 +53,7 @@ class DepotDownloader:
             '-remember-password',
             '-dir', self.wrf_dir,
         ]
-        run_process(subprocess_params, name='download-game-files')
+        run_process(subprocess_options, name='download-game-files')
 
         # todo, verify files are downloaded
 
@@ -68,7 +69,7 @@ class DepotDownloader:
         # create temporary folder to store manifest file
         temp_dir = os.path.join(self.wrf_dir, 'temp')
 
-        subprocess_params = [
+        subprocess_options = [
             os.path.join(self.depot_downloader_cmd_path),
             '-app',
             self.app_id,
@@ -84,7 +85,7 @@ class DepotDownloader:
             '-manifest-only',
             '-validate',
         ]
-        run_process(subprocess_params, name='get-latest-manifest-id')
+        run_process(subprocess_options, name='get-latest-manifest-id')
 
         manifest_id = None
         for filename in os.listdir(temp_dir):
@@ -101,14 +102,14 @@ class DepotDownloader:
             f.write(manifest_id)
 
 if __name__ == '__main__':
-    params = init_params()
+    options = init_options()
 
-    if params is None:
-        raise ValueError("Params must be provided")
+    if options is None:
+        raise ValueError("Options must be provided")
     
     DepotDownloader(
-        wrf_dir=params.steam_game_download_path,
-        steam_username=params.steam_username,
-        steam_password=params.steam_password,
-        force=params.force_steam_download,
-    ).run(manifest_id=params.manifest_id)
+        wrf_dir=options.steam_game_download_path,
+        steam_username=options.steam_username,
+        steam_password=options.steam_password,
+        force=options.force_steam_download,
+    ).run(manifest_id=options.manifest_id)

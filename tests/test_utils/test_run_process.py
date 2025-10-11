@@ -118,7 +118,7 @@ class TestRunProcess(unittest.TestCase):
         mock_process.wait.return_value = 0
         mock_popen.return_value = mock_process
         
-        # Execute without name parameter
+        # Execute without name option
         run_process("echo test")
         
         # Verify logger was called with empty name
@@ -285,8 +285,8 @@ class TestRunProcess(unittest.TestCase):
         self.mock_logger.debug.assert_has_calls(expected_calls)
     
     @patch('subprocess.Popen')  
-    def test_custom_timeout_parameter(self, mock_popen):
-        """Test process with custom timeout parameter."""
+    def test_custom_timeout_option(self, mock_popen):
+        """Test process with custom timeout option."""
         # Setup mock process
         mock_process = Mock()
         mock_process.poll.return_value = 0  # Process finishes immediately
@@ -305,8 +305,8 @@ class TestRunProcess(unittest.TestCase):
     
     @patch('os.name', 'nt')  # Mock Windows OS
     @patch('subprocess.Popen')
-    def test_shell_script_on_windows_string_param(self, mock_popen):
-        """Test shell script handling on Windows with string parameter."""
+    def test_shell_script_on_windows_string_option(self, mock_popen):
+        """Test shell script handling on Windows with string option."""
         # Setup mock process
         mock_process = Mock()
         mock_process.stdout = StringIO("script output\n")
@@ -326,8 +326,8 @@ class TestRunProcess(unittest.TestCase):
     
     @patch('os.name', 'nt')  # Mock Windows OS
     @patch('subprocess.Popen')
-    def test_shell_script_on_windows_list_param(self, mock_popen):
-        """Test shell script handling on Windows with list parameter."""
+    def test_shell_script_on_windows_list_option(self, mock_popen):
+        """Test shell script handling on Windows with list option."""
         # Setup mock process
         mock_process = Mock()
         mock_process.stdout = StringIO("script with args\n")
@@ -390,7 +390,7 @@ class TestRunProcess(unittest.TestCase):
     @patch('os.name', 'nt')  # Mock Windows OS
     @patch('subprocess.Popen')
     def test_empty_list_on_windows(self, mock_popen):
-        """Test empty list parameter on Windows."""
+        """Test empty list option on Windows."""
         # Setup mock process
         mock_process = Mock()
         mock_process.stdout = StringIO("")
@@ -530,7 +530,7 @@ class TestRunProcess(unittest.TestCase):
         mock_process.wait.return_value = 0
         mock_popen.return_value = mock_process
         
-        # Execute without background parameter (should default to False)
+        # Execute without background option (should default to False)
         result = run_process("echo test", name="fg_test")
         
         # Verify function returns None (foreground mode)
@@ -576,7 +576,7 @@ class TestRunProcess(unittest.TestCase):
         # Execute
         run_process("echo unix", name="unix_test")
         
-        # Verify select was called with correct parameters
+        # Verify select was called with correct options
         mock_select.assert_called()
         # Verify output was logged
         self.mock_logger.debug.assert_called_with('[process: unix_test] unix line')

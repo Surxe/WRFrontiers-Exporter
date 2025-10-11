@@ -43,7 +43,7 @@ class TestDepotDownloaderProcesses(unittest.TestCase):
     @patch('os.path.exists')
     @patch.object(src_run_depot_downloader, 'run_process')
     def test_download(self, mock_run_process, mock_exists):
-        """Test _download method constructs correct subprocess parameters."""
+        """Test _download method constructs correct subprocess options."""
         mock_exists.return_value = True
         
         depot = DepotDownloader(
@@ -61,11 +61,11 @@ class TestDepotDownloaderProcesses(unittest.TestCase):
             # Verify logging
             mock_logger.debug.assert_called_with(f'Downloading game with manifest id {manifest_id}')
             
-            # Verify run_process was called with correct parameters
+            # Verify run_process was called with correct options
             mock_run_process.assert_called_once()
             call_args = mock_run_process.call_args[0][0]
             
-            expected_params = [
+            expected_options = [
                 os.path.join(depot.depot_downloader_cmd_path),
                 '-app', depot.app_id,
                 '-depot', depot.depot_id,
@@ -76,9 +76,9 @@ class TestDepotDownloaderProcesses(unittest.TestCase):
                 '-dir', self.wrf_dir,
             ]
             
-            self.assertEqual(call_args, expected_params)
+            self.assertEqual(call_args, expected_options)
             
-            # Verify the name parameter was passed
+            # Verify the name option was passed
             call_kwargs = mock_run_process.call_args[1]
             self.assertEqual(call_kwargs['name'], 'download-game-files')
 
@@ -103,12 +103,12 @@ class TestDepotDownloaderProcesses(unittest.TestCase):
         
         result = depot._get_latest_manifest_id()
         
-        # Verify run_process was called with correct parameters for manifest-only
+        # Verify run_process was called with correct options for manifest-only
         mock_run_process.assert_called_once()
         call_args = mock_run_process.call_args[0][0]
         
         temp_dir = os.path.join(self.wrf_dir, 'temp')
-        expected_params = [
+        expected_options = [
             os.path.join(depot.depot_downloader_cmd_path),
             '-app', depot.app_id,
             '-depot', depot.depot_id,
@@ -120,9 +120,9 @@ class TestDepotDownloaderProcesses(unittest.TestCase):
             '-validate',
         ]
         
-        self.assertEqual(call_args, expected_params)
+        self.assertEqual(call_args, expected_options)
         
-        # Verify the name parameter was passed
+        # Verify the name option was passed
         call_kwargs = mock_run_process.call_args[1]
         self.assertEqual(call_kwargs['name'], 'get-latest-manifest-id')
         
@@ -257,10 +257,10 @@ class TestDepotDownloaderProcesses(unittest.TestCase):
         
         depot._download(manifest_id)
         
-        # Verify run_process was called and parameters include special characters
+        # Verify run_process was called and options include special characters
         call_args = mock_run_process.call_args[0][0]
         
-        # Find username and password in the parameters
+        # Find username and password in the options
         username_idx = call_args.index('-username')
         password_idx = call_args.index('-password')
         

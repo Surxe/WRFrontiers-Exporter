@@ -316,8 +316,8 @@ class TestWaitForProcessByName(unittest.TestCase):
         # Should have called both filtered and unfiltered tasklist (at least 8 calls)
         self.assertGreaterEqual(mock_subprocess_run.call_count, 8)
     
-    def test_custom_timeout_parameter(self):
-        """Test that custom timeout parameter is respected."""
+    def test_custom_timeout_option(self):
+        """Test that custom timeout option is respected."""
         with patch('time.time') as mock_time, \
              patch('time.sleep'), \
              patch('subprocess.run'), \

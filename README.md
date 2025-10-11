@@ -57,99 +57,115 @@ cp .env.example .env
 
 4. Run the exporter:
 ```bash
-python src/run.py
+python src/run.py --help
 ```
 
-## Configuration
+## Options
 
-### Environment Variables
+### Command Line Argument Usage
 
-Copy `.env.example` to `.env` and configure the following parameters:
+For each option, the command line argument may be used at runtime instead of providing it in the `.env`.
 
+```bash
+python src/run.py                       # Run all steps with default/env values
+python src/run.py --log-level INFO      # Run all steps with default/env values, except with LOG_LEVEL INFO
+```
+
+### Parameters
+
+Copy `.env.example` to `.env` and configure the following parameters, unless they will be provided as arguments at runtime:
+
+<!-- BEGIN_GENERATED_OPTIONS -->
 #### Logging
-- **LOG_LEVEL** - Set the log level. Options: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
-  - Default: `"DEBUG"`
 
-#### Dependencies  
-- **FORCE_DOWNLOAD_DEPENDENCIES** - Set to `"True"` to force re-download of dependencies even if they are the same version. Set to `"False"` to skip downloading if the version matches.
-  - Default: `"False"`
+- **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+  - Default: `"DEBUG"`
+  - Command line: `--log-level`
+
+
+#### Dependencies
+
+- **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
+  - Default: `"false"`
+  - Command line: `--should-download-dependencies`
+
+* **FORCE_DOWNLOAD_DEPENDENCIES** - Re-download dependencies even if they are already present.
+  - Default: `"false"`
+  - Command line: `--force-download-dependencies`
+
 
 #### Steam Download
-- **MANIFEST_ID** - Specific Steam manifest ID to download. Leave empty to download the latest version. Use specific ID to download a particular game version. See [SteamDB](https://steamdb.info/depot/1491005/manifests) for list of manifest id's for WRF.
+
+- **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
+  - Default: `"false"`
+  - Command line: `--should-download-steam-game`
+
+* **FORCE_STEAM_DOWNLOAD** - Re-download/update Steam game files even if they are already present.
+  - Default: `"false"`
+  - Command line: `--force-steam-download`
+
+* **MANIFEST_ID** - Steam manifest ID to download. If blank, the latest manifest ID will be used.
   - Default: `""` (empty for latest)
-- **FORCE_STEAM_DOWNLOAD** - Set to `"True"` to force re-download of the latest manifest even if the previously installed manifest id is the same. If true and a previous installation is here, it will simply update the installation.
-  - Default: `"False"`
-- **STEAM_USERNAME** - Your Steam username for DepotDownloader authentication.
-- **STEAM_PASSWORD** - Your Steam password for DepotDownloader authentication.
-- **STEAM_GAME_DOWNLOAD_PATH** - Path where the game will be downloaded by DepotDownloader. Ensure it exists. A prior version can exist here if not corrupted and it will be updated to latest version.
-  - Example: `"C:/WRFrontiersDB/SteamDownload"`
+  - Command line: `--manifest-id`
+  - See [SteamDB](https://steamdb.info/app/1491000/depot/1491005/manifests/) for available values
 
-#### Mapper Creation
-- **DUMPER7_OUTPUT_DIR** - Path to Dumper-7's output folder. If you're not sure where this path is for you, it is likely this default path. You can confirm by running `src/mapper/get_mapper.py`, letting it error, then looking for the directory. Ensure it exists. Content will be cleared before mapper is created so that the created mapper can be located properly.
-  - Default: `"C:/Dumper-7"`
-- **OUTPUT_MAPPER_FILE** - Where the generated mapper file will be saved as. Ensure the parent dirs exists.
-  - Example: `"C:/WRFrontiersDB/mapper.usmap"`
-- **FORCE_GET_MAPPER** - If true and a previous mapper is here, it will be overwritten. Set to `"False"` to skip mapper creation if the file already exists.
-  - Default: `"True"`
+* **STEAM_USERNAME** - Steam username for authentication.
+  - Default: None - required if section enabled
+  - Command line: `--steam-username`
 
-#### Export Output
-- **OUTPUT_DATA_DIR** - Path to where the output JSON will be saved. This should point to the "WRFrontiers\Content" folder that contains all json files of the game. Ensure the parent dirs exists. When using BatchExport, it will wipe its contents before generating these files.
-  - Example: `"C:/WRFrontiersDB/ExportData"`
-- **FORCE_EXPORT** - If true and a previous export is here, it will be overwritten. Set to `"False"` to skip exporting if the folder already exists.
-  - Default: `"True"`
+* **STEAM_PASSWORD** - Steam password for authentication.
+  - Default: None - required if section enabled
+  - Command line: `--steam-password`
 
-## Command Line Usage
+* **STEAM_GAME_DOWNLOAD_PATH** - Path to the local Steam game installation directory.
+  - Default: None - required if section enabled
+  - Command line: `--steam-game-download-path`
 
-### Basic Usage
-```bash
-python src/run.py                           # Run all steps with default/env values
-```
 
-### Parameter Override Examples
-```bash
-python src/run.py --log-level INFO          # Set log level
-python src/run.py --manifest-id 1234567890 --force-steam-download   # Download specific manifest version
-python src/run.py --steam-username user --steam-password pass       # Override Steam credentials
-python src/run.py --force-download-dependencies --force-export      # Force all downloads and exports
-```
+#### Mapping
 
-### Skip Specific Steps
-```bash
-python src/run.py --skip-dependencies      # Skip dependency check/update
-python src/run.py --skip-steam-update      # Skip steam game download/update
-python src/run.py --skip-mapper            # Skip mapper file creation
-python src/run.py --skip-batch-export      # Skip batch export to JSON
-```
+- **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
+  - Default: `"false"`
+  - Command line: `--should-get-mapper`
 
-### Run Only Specific Steps
-```bash
-python src/run.py --skip-dependencies --skip-steam-update    # Only mapper + export
-python src/run.py --skip-mapper --skip-batch-export          # Only deps + steam
-```
+* **FORCE_GET_MAPPER** - Re-generate the mapping file even if it already exists.
+  - Default: `"true"`
+  - Command line: `--force-get-mapper`
 
-## Command Line Arguments
+* **DUMPER7_OUTPUT_DIR** - Path to the where Dumper7 outputs its generated SDK.
+  - Default: None - required if section enabled
+  - Command line: `--dumper7-output-dir`
+  - If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.
 
-### Configuration Parameters
-- `--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}` - Set the log level
-- `--manifest-id MANIFEST_ID` - Specific Steam manifest ID to download (leave empty for latest)
-- `--steam-username USERNAME` - Steam username for DepotDownloader authentication
-- `--steam-password PASSWORD` - Steam password for DepotDownloader authentication
-- `--steam-game-download-path PATH` - Path where the game will be downloaded by DepotDownloader
-- `--dumper7-output-dir PATH` - Path to Dumper-7's output folder
-- `--output-mapper-file PATH` - Where the generated mapper file will be saved
-- `--output-data-dir PATH` - Path where the output JSON will be saved
+* **OUTPUT_MAPPER_FILE** - Path to save the generated mapping file (.usmap) at. Should end in .usmap
+  - Default: None - required if section enabled
+  - Command line: `--output-mapper-file`
 
-### Force Options
-- `--force-download-dependencies` - Force re-download of dependencies even if same version exists
-- `--force-steam-download` - Force re-download of Steam files even if same manifest exists
-- `--force-get-mapper` - Force regeneration of mapper file even if it exists
-- `--force-export` - Force re-export of game data even if output exists
 
-### Skip Options
-- `--skip-dependencies` - Skip dependency manager step
-- `--skip-steam-update` - Skip steam download/update step
-- `--skip-mapper` - Skip mapper creation step
-- `--skip-batch-export` - Skip batch export step
+#### Batch Export
+
+- **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
+  - Default: `"false"`
+  - Command line: `--should-batch-export`
+
+* **FORCE_EXPORT** - Re-run the BatchExport even if output directory is not empty.
+  - Default: `"true"`
+  - Command line: `--force-export`
+
+* **OUTPUT_DATA_DIR** - Path to save the exported assets to.
+  - Default: None - required if section enabled
+  - Command line: `--output-data-dir`
+
+
+<!-- END_GENERATED_OPTIONS -->
+### Miscellaneous Option Behavior
+
+* An option's value is determined by the following priority, in descending order
+  * Argument
+  * Option
+  * Default
+* If all options prefixed with `SHOULD_` are defaulted to `False`, they are instead all defaulted to `True` for ease of use
+* Options are only required if their section's `SHOULD_` option is `True`
 
 ## Requirements
 
@@ -164,7 +180,7 @@ python src/run.py --skip-mapper --skip-batch-export          # Only deps + steam
 WRFrontiers-Exporter/
 ├── src/
 │   ├── run.py                    # Main orchestration script
-│   ├── utils.py                  # Shared utilities and parameter management
+│   ├── utils.py                  # Shared utilities and option management
 │   ├── dependency_manager.py     # Dependency download/update management
 │   ├── steam/
 │   │   └── run_depot_downloader.py  # Steam game download
@@ -218,6 +234,9 @@ python src/run.py --log-level DEBUG
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+* After making changes to `src/options_schema.py`, rerun `build_scripts/build_docs.py` to rebuild the `.env.example` and `README.md`
+* Follow standards set by `STANDARDS.md` (barebones atm)
 
 ## Disclaimer
 
