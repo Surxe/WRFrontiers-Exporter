@@ -167,6 +167,9 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 * If all options prefixed with `SHOULD_` are defaulted to `False`, they are instead all defaulted to `True` for ease of use
 * Options are only required if their section's `SHOULD_` option is `True`
 
+### Batch Export Options
+For customizing Batch Export's options, namely paths to export, see `src\cue4p-batchexport\BatchExport\README.md` after downloading dependencies. A custom needed exports and appsettings file can be created in the BatchExport installation directory as it is gitignored.
+
 ## Requirements
 
 - Python 3.7+
@@ -179,21 +182,24 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 ```
 WRFrontiers-Exporter/
 ├── src/
-│   ├── run.py                    # Main orchestration script
-│   ├── utils.py                  # Shared utilities and option management
-│   ├── dependency_manager.py     # Dependency download/update management
+│   ├── run.py                       # Main orchestration script
+│   ├── utils.py                     # Shared utilities and option management
+│   ├── dependency_manager.py        # Dependency download/update management
 │   ├── steam/
 │   │   └── run_depot_downloader.py  # Steam game download
-│   ├── mapper/
-│   │   ├── get_mapper.py         # DLL injection and mapper creation
-│   │   ├── simple_injector.py   # DLL injection utilities
-│   │   └── Dumper-7.dll         # UE4 SDK generation DLL
-│   └── cue4p-batchexport/
-│       └── run_batch_export.py  # Asset export to JSON
-├── logs/                         # Log files
-├── .env.example                  # Environment configuration template
-├── requirements.txt              # Python dependencies
-└── README.md                     # This file
+│   │   └── DepotDownloader/         # DepotDownloader installation (after downloaded)
+│   ├── mapper/   
+│   │   ├── get_mapper.py            # DLL injection and mapper creation
+│   │   ├── simple_injector.py       # DLL injection utilities
+│   │   └── Dumper-7.dll             # UE4 SDK generation DLL
+│   └── cue4p-batchexport/   
+│       └── run_batch_export.py      # Asset export to JSON
+│       └── BatchExport/             # BatchExport installation (after downloaded)
+│           └── README.md/           # BatchExport documentation
+├── logs/                            # Log files
+├── .env.example                     # Environment configuration template
+├── requirements.txt                 # Python dependencies
+└── README.md                        # This file
 ```
 
 ## Troubleshooting
