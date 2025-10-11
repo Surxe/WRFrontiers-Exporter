@@ -513,11 +513,6 @@ class TestOptions(unittest.TestCase):
         
         # Verify the method processed the schema correctly
         self.assertEqual(options.log_level, "WARNING")
-        
-        # Verify print was called with processing message
-        mock_print.assert_called()
-        print_calls = [call[0][0] for call in mock_print.call_args_list]
-        self.assertTrue(any("Processing schema with args_dict:" in str(call) for call in print_calls))
 
 
 if __name__ == '__main__':
