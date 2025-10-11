@@ -53,7 +53,7 @@ class BatchExporter:
         self.command = [
             str(self.executable_path),
             "--preset", "WarRobotsFrontiers",
-            "--pak-files-directory", self.options.steam_game_download_path,
+            "--pak-files-directory", self.options.steam_game_download_dir,
             "--export-output-path", self.options.output_data_dir,
             "--mapping-file-path", self.mapping_file_path,
             "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false"
@@ -70,10 +70,10 @@ class BatchExporter:
                 "Please run install_batch_export.sh first to download it."
             )
         
-        if not os.path.exists(self.options.steam_game_download_path):
+        if not os.path.exists(self.options.steam_game_download_dir):
             raise FileNotFoundError(
-                f"Steam game download path not found: {self.options.steam_game_download_path}. "
-                "Please ensure STEAM_GAME_DOWNLOAD_PATH is set correctly in your environment."
+                f"Steam game download path not found: {self.options.steam_game_download_dir}. "
+                "Please ensure STEAM_GAME_DOWNLOAD_DIR is set correctly in your environment."
             )
         
         # Create output data directory if it doesn't exist
@@ -101,7 +101,7 @@ class BatchExporter:
         logger.info("Starting BatchExport process...")
         logger.info(f"Using mapping file: {self.mapping_file_path}")
         logger.info(f"Executing BatchExport with command: {str(self)}")
-        logger.info(f"PAK files directory: {self.options.steam_game_download_path}")
+        logger.info(f"PAK files directory: {self.options.steam_game_download_dir}")
         logger.info(f"Export output path: {self.options.output_data_dir}")
         
         try:

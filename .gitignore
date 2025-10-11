@@ -170,7 +170,7 @@ notes.md
 todo.txt
 
 # Downloaded dependencies
-src/cue4p-batchexport/BatchExport/
+src/batch_export/BatchExport/
 oo2core_9_win64.dll
 src/steam/DepotDownloader/
 

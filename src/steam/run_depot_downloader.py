@@ -108,7 +108,7 @@ if __name__ == '__main__':
         raise ValueError("Options must be provided")
     
     DepotDownloader(
-        wrf_dir=options.steam_game_download_path,
+        wrf_dir=options.steam_game_download_dir,
         steam_username=options.steam_username,
         steam_password=options.steam_password,
         force=options.force_steam_download,

@@ -92,7 +92,7 @@ class TestOptions(unittest.TestCase):
             force_steam_download=False,
             steam_username="testuser",
             steam_password="testpass",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=mapper_file,
@@ -114,7 +114,7 @@ class TestOptions(unittest.TestCase):
         self.assertFalse(options.force_steam_download)
         self.assertEqual(options.steam_username, "testuser")
         self.assertEqual(options.steam_password, "testpass")
-        self.assertEqual(str(options.steam_game_download_path), self.steam_dir)
+        self.assertEqual(str(options.steam_game_download_dir), self.steam_dir)
 
     @patch.object(src_options, 'logger')
     @patch('builtins.print')
@@ -132,7 +132,7 @@ class TestOptions(unittest.TestCase):
             'FORCE_STEAM_DOWNLOAD': 'False',
             'STEAM_USERNAME': 'envuser',
             'STEAM_PASSWORD': 'envpass',
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "env.usmap"),
@@ -169,7 +169,7 @@ class TestOptions(unittest.TestCase):
             'STEAM_USERNAME': 'envuser',
             'STEAM_PASSWORD': 'envpass',
             'SHOULD_DOWNLOAD_STEAM_GAME': 'True',
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "test.usmap"),
@@ -206,7 +206,7 @@ class TestOptions(unittest.TestCase):
             'LOG_LEVEL': 'DEBUG',
             'SHOULD_DOWNLOAD_DEPENDENCIES': 'true',  # String boolean
             'FORCE_DOWNLOAD_DEPENDENCIES': 'false',  # String boolean
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,  # Should become Path
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,  # Should become Path
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,  # Should become Path
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "test.usmap"),  # Should become Path
@@ -222,7 +222,7 @@ class TestOptions(unittest.TestCase):
         self.assertTrue(options.should_download_dependencies)  # 'true' -> True
         self.assertIsInstance(options.force_download_dependencies, bool)
         self.assertFalse(options.force_download_dependencies)  # 'false' -> False
-        self.assertIsInstance(options.steam_game_download_path, Path)
+        self.assertIsInstance(options.steam_game_download_dir, Path)
         self.assertIsInstance(options.dumper7_output_dir, Path)
 
     @patch.object(src_options, 'logger')
@@ -238,7 +238,7 @@ class TestOptions(unittest.TestCase):
             'SHOULD_DOWNLOAD_STEAM_GAME': 'True',
             'STEAM_USERNAME': 'testuser',
             'STEAM_PASSWORD': 'testpass',
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "test.usmap"),
@@ -268,7 +268,7 @@ class TestOptions(unittest.TestCase):
         # Enable should_download_steam_game but don't provide required section options
         args = create_args(
             should_download_steam_game=True,
-            # Missing: steam_username, steam_password, steam_game_download_path
+            # Missing: steam_username, steam_password, steam_game_download_dir
             should_get_mapper=True,
             should_batch_export=True
         )
@@ -345,7 +345,7 @@ class TestOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),
@@ -373,7 +373,7 @@ class TestOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),
@@ -398,7 +398,7 @@ class TestOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),
@@ -424,7 +424,7 @@ class TestOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="test",
             steam_password="test",
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),
@@ -455,7 +455,7 @@ class TestOptions(unittest.TestCase):
             should_download_steam_game=True,
             steam_username="testuser",
             steam_password="secret_password",  # This should be hidden
-            steam_game_download_path=self.steam_dir,
+            steam_game_download_dir=self.steam_dir,
             should_get_mapper=True,
             dumper7_output_dir=self.dumper_dir,
             output_mapper_file=os.path.join(self.mapper_dir, "test.usmap"),

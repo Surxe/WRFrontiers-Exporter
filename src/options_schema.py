@@ -1,6 +1,22 @@
 from typing import Literal
 from pathlib import Path
 
+"""
+# Schema
+* **env** - Environment variable name (UPPER_CASE)
+* **arg** - Command line argument (kebab-case with --)
+* **type** - Python type (bool, str, Path, Literal)
+* **default** - Default value. None means its required if it's root option is True
+* **help** - Description text
+* **section** - Logical grouping name
+* **section_options** - Nested sub-options
+* **sensitive** - Boolean flag for password masking
+
+# Patterns
+* **should_** - Main action flags (e.g., `should_download_steam_game`)
+* **force_** - Override/refresh flags (e.g., `force_download_dependencies`)
+"""
+
 OPTIONS_SCHEMA = {
     "LOG_LEVEL": {
         "env": "LOG_LEVEL",
@@ -67,9 +83,9 @@ OPTIONS_SCHEMA = {
                 "sensitive": True,
                 "help": "Steam password for authentication.",
             },
-            "STEAM_GAME_DOWNLOAD_PATH": {
-                "env": "STEAM_GAME_DOWNLOAD_PATH",
-                "arg": "--steam-game-download-path",
+            "STEAM_GAME_DOWNLOAD_DIR": {
+                "env": "STEAM_GAME_DOWNLOAD_DIR",
+                "arg": "--steam-game-download-dir",
                 "type": Path,
                 "default": None,
                 "help": "Path to the local Steam game installation directory.",
@@ -97,7 +113,7 @@ OPTIONS_SCHEMA = {
                 "type": Path,
                 "default": None,
                 "help": "Path to the where Dumper7 outputs its generated SDK.",
-                "help_extended": "If unsure where this is, it is likely C:/Dumper-7. Confirm by running the mapper, letting it fail, and checking for the dir."
+                "help_extended": "If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir."
             },
             "OUTPUT_MAPPER_FILE": {
                 "env": "OUTPUT_MAPPER_FILE",

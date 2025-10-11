@@ -211,11 +211,11 @@ def main(options=None):
         return options.output_mapper_file
 
     # Construct shipping executable path from steam download path
-    shipping_cmd_path = os.path.join(options.steam_game_download_path, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
+    shipping_cmd_path = os.path.join(options.steam_game_download_dir, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
     
     # Validate that the shipping executable exists
     if not os.path.exists(shipping_cmd_path):
-        raise ValueError(f"Shipping executable not found at: {shipping_cmd_path}. Please ensure the game is downloaded to {options.steam_game_download_path}")
+        raise ValueError(f"Shipping executable not found at: {shipping_cmd_path}. Please ensure the game is downloaded to {options.steam_game_download_dir}")
     
     game_process_name = os.path.basename(shipping_cmd_path)
 
