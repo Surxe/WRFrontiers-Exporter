@@ -9,6 +9,7 @@ ensuring documentation stays in sync with the actual option definitions.
 import os
 import sys
 from pathlib import Path
+from typing import Dict, Any, Set
 
 # Add src directory to path to import options module
 src_path = Path(__file__).parent.parent / "src"
@@ -17,7 +18,7 @@ sys.path.insert(0, str(src_path))
 from options import OPTIONS_SCHEMA
 
 
-def generate_env_example():
+def generate_env_example() -> str:
     """Generate .env.example content from OPTIONS_SCHEMA."""
     
     # Header
@@ -27,7 +28,7 @@ def generate_env_example():
     
     lines = header + [""]  # Add blank line after header
     
-    def process_option(option_name, details, is_section_option=False):
+    def process_option(option_name: str, details: Dict[str, Any], is_section_option: bool = False) -> None:
         """Process a single option and add it to the lines."""
         env_var = details["env"]
         help_text = details.get("help", "")
@@ -89,7 +90,7 @@ def generate_env_example():
     return "\n".join(lines)
 
 
-def update_env_example():
+def update_env_example() -> bool:
     """Update the .env.example file with generated content."""
     repo_root = Path(__file__).parent.parent
     env_example_path = repo_root / ".env.example"
@@ -122,7 +123,7 @@ def update_env_example():
     return True
 
 
-def validate_generated_file():
+def validate_generated_file() -> bool:
     """Validate that the generated .env.example file is properly formatted."""
     repo_root = Path(__file__).parent.parent
     env_example_path = repo_root / ".env.example"
@@ -155,7 +156,7 @@ def validate_generated_file():
         return False
 
 
-def main():
+def main() -> None:
     """Main function to run the build process."""
     print("Building .env.example from OPTIONS_SCHEMA...")
     print()

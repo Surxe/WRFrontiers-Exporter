@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-def run_script(script_name):
+def run_script(script_name: str) -> bool:
     """Run a build script and check for success."""
     
     build_dir = Path(__file__).parent
@@ -39,7 +39,7 @@ def run_script(script_name):
             print(f"   stderr: {e.stderr}")
         return False
 
-def main():
+def main() -> bool:
     """Run all documentation build scripts."""
     
     print("Building all documentation from OPTIONS_SCHEMA...")

@@ -3,15 +3,16 @@ import sys
 import os
 import time
 import shutil
+from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from options import init_options
+from options import init_options, Options
 from utils import clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
 from mapper.simple_injector import inject_dll_into_process
 from loguru import logger
 import subprocess
 
-def get_dll_path():
+def get_dll_path() -> str:
     dll_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'mapper', 'Dumper-7.dll')
     if not os.path.exists(dll_path):
         raise Exception(f"DLL file not found: {dll_path}")
@@ -19,7 +20,7 @@ def get_dll_path():
     return dll_path
 
 
-def get_mapping_file_path(options=None):
+def get_mapping_file_path(options: Optional[Options] = None) -> str:
     """
     Get the path to the mapping file by running the complete mapper process.
     The returned path will be the final output location (options.output_mapper_file) 
@@ -37,7 +38,7 @@ def get_mapping_file_path(options=None):
     return main(options)
 
 
-def find_existing_mapping_file(dumper7_output_dir):
+def find_existing_mapping_file(dumper7_output_dir: str) -> Optional[str]:
     """
     Check if a mapping file already exists in the Dumper-7 output directory.
     
@@ -53,7 +54,7 @@ def find_existing_mapping_file(dumper7_output_dir):
         return None
 
 
-def copy_mapper_file_to_output(source_mapper_path, output_mapper_file):
+def copy_mapper_file_to_output(source_mapper_path: str, output_mapper_file: str) -> Optional[str]:
     """
     Copy a mapper file from source to output location.
     
@@ -84,7 +85,7 @@ def copy_mapper_file_to_output(source_mapper_path, output_mapper_file):
         return None
 
 
-def get_mapper_from_sdk(dumper7_output_dir):
+def get_mapper_from_sdk(dumper7_output_dir: str) -> str:
     """
     Extract the mapper file path from the Dumper-7 SDK output directory.
     
@@ -130,7 +131,7 @@ def get_mapper_from_sdk(dumper7_output_dir):
     return mapper_file_path
 
 
-def launch_game_process(shipping_cmd_path):
+def launch_game_process(shipping_cmd_path: str) -> subprocess.Popen:
     """
     Launch the game process.
     
@@ -154,7 +155,7 @@ def launch_game_process(shipping_cmd_path):
     return game_process
 
 
-def terminate_game_process(game_process, game_process_name):
+def terminate_game_process(game_process: subprocess.Popen, game_process_name: str) -> None:
     """
     Terminate the game process.
     
@@ -175,7 +176,7 @@ def terminate_game_process(game_process, game_process_name):
         terminate_process_by_name(game_process_name)
 
 
-def perform_dll_injection(game_process_name, dll_path):
+def perform_dll_injection(game_process_name: str, dll_path: str) -> bool:
     """
     Perform DLL injection into the game process.
     
@@ -201,7 +202,7 @@ def perform_dll_injection(game_process_name, dll_path):
     return injection_success
 
 
-def main(options=None):
+def main(options: Optional[Options] = None) -> str:
     if options is None:
         raise ValueError("Options must be provided")
 

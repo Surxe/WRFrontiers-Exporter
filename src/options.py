@@ -79,14 +79,14 @@ class Options:
         # Process the schema to set all attributes
         options = self._process_schema(OPTIONS_SCHEMA, args_dict)
 
-        self.validate(options)
-
         # Set attributes dynamically using lowercase underscore format
         for key, value in options.items():
             # Convert schema key (UPPER_CASE) to attribute name (lower_case)
             attr_name = key.lower()
             setattr(self, attr_name, value)
             logger.debug(f"Set attribute {attr_name} to value: {value}")
+
+        self.validate()
 
         # Setup loguru logging to /logs dir
         logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')
@@ -107,15 +107,13 @@ class Options:
         
         self.log()
 
-    def _process_schema(self, schema: dict, args_dict: dict):
+    def _process_schema(self, schema: dict, args_dict: dict) -> dict:
         """Process the option schema, env params, and args to get the combined options."""
-
-        print("Processing schema with args_dict:", args_dict)
 
         # Combine args and options
         options = {}
 
-        def process_option(option_name: str, details: dict):
+        def process_option(option_name: str, details: dict) -> None:
             # Convert arg name to attribute name (remove -- and convert - to _)
             attr_name = details["arg"].lstrip('--').replace('-', '_')
             
@@ -167,19 +165,19 @@ class Options:
 
         return options
     
-    def validate(self, options: dict):
+    def validate(self) -> None:
         # If a root option is true, ensure its sub-options are provided (meaning not defaulted to None)
         for root_option in self.root_options:
             missing_options = []
-            if options.get(root_option) is True:
+            if self.__dict__.get(root_option) is True:
                 section_options = OPTIONS_SCHEMA[root_option]["section_options"]
                 section = OPTIONS_SCHEMA[root_option]["section"]
                 if section_options:
                     logger.debug(f"{root_option} is True, ensuring section_options for section {section} are provided")
                 for sub_option in section_options:
-                    if options.get(sub_option) is None:
+                    if self.__dict__.get(sub_option) is None:
                         missing_options.append(sub_option)
-                    logger.debug(f"Section option {sub_option} is set to {options[sub_option]}")
+                    logger.debug(f"Section option {sub_option} is set to {self.__dict__[sub_option]}")
 
             if missing_options:
                 raise ValueError(f"The following options must be provided when their section's root option ({root_option}) is true: {', '.join(missing_options)}")

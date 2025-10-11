@@ -3,9 +3,10 @@ import sys
 import os
 import time
 from pathlib import Path
+from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from options import init_options
+from options import init_options, Options
 from utils import run_process
 from loguru import logger
 
@@ -28,7 +29,7 @@ class BatchExporter:
     for extracting War Robots Frontiers game data from .pak files to JSON format.
     """
     
-    def __init__(self, options=None, mapping_file_path=None):
+    def __init__(self, options: Optional[Options] = None, mapping_file_path: Optional[str] = None) -> None:
         """
         Initialize the BatchExporter.
         
@@ -62,7 +63,7 @@ class BatchExporter:
         # Validate paths
         self._validate_setup()
     
-    def _validate_setup(self):
+    def _validate_setup(self) -> None:
         """Validate that all required paths and files exist."""
         if not self.executable_path.exists():
             raise FileNotFoundError(
@@ -88,7 +89,7 @@ class BatchExporter:
                 "Please ensure the directory exists."
             )
     
-    def run(self):
+    def run(self) -> None:
         """
         Execute BatchExport with the configured options.
         
@@ -120,12 +121,12 @@ class BatchExporter:
             logger.error(error_msg)
             raise RuntimeError(error_msg)
     
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the command that would be executed as a string."""
         return ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in self.command)
 
 
-def main(options=None, mapping_file_path=None):
+def main(options: Optional[Options] = None, mapping_file_path: Optional[str] = None) -> bool:
     """
     Main function to run BatchExport with the given options.
     

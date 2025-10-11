@@ -3,13 +3,15 @@ import shutil
 from loguru import logger
 from options import init_options
 from utils import run_process
+from typing import Optional
+from pathlib import Path
 
 APP_ID = '1491000'  # war robots: frontier's app_id
 DEPOT_ID = '1491005'  # the big depot
 
 
 class DepotDownloader:
-    def __init__(self, wrf_dir, steam_username, steam_password, force):
+    def __init__(self, wrf_dir: str, steam_username: str, steam_password: str, force: bool) -> None:
         self.depot_downloader_cmd_path = 'src/steam/DepotDownloader/DepotDownloader.exe'
         if not os.path.exists(self.depot_downloader_cmd_path):
             raise Exception('Is DepotDownloader installed? Run dependency_manager.py')
@@ -25,7 +27,7 @@ class DepotDownloader:
         self.manifest_path = os.path.join(self.wrf_dir, 'manifest.txt')
         self.force = force
 
-    def run(self, manifest_id):
+    def run(self, manifest_id: Optional[str]) -> None:
         # no input manifest id downloads the latest version
         if manifest_id is None:
             manifest_id = self._get_latest_manifest_id()
@@ -40,7 +42,7 @@ class DepotDownloader:
         self._download(manifest_id)
         self._write_downloaded_manifest_id(manifest_id)
 
-    def _download(self, manifest_id):
+    def _download(self, manifest_id: str) -> None:
         logger.debug(f'Downloading game with manifest id {manifest_id}')
 
         subprocess_options = [
@@ -57,7 +59,7 @@ class DepotDownloader:
 
         # todo, verify files are downloaded
 
-    def _read_downloaded_manifest_id(self):
+    def _read_downloaded_manifest_id(self) -> Optional[str]:
         if not os.path.exists(self.manifest_path):
             return None
 
@@ -65,7 +67,7 @@ class DepotDownloader:
             manifest_id = f.read().strip()
         return manifest_id
 
-    def _get_latest_manifest_id(self):
+    def _get_latest_manifest_id(self) -> Optional[str]:
         # create temporary folder to store manifest file
         temp_dir = os.path.join(self.wrf_dir, 'temp')
 
@@ -96,7 +98,7 @@ class DepotDownloader:
         shutil.rmtree(temp_dir)
         return manifest_id
 
-    def _write_downloaded_manifest_id(self, manifest_id):
+    def _write_downloaded_manifest_id(self, manifest_id: str) -> None:
         logger.debug('Writing manifest id', manifest_id, 'to', self.manifest_path)
         with open(self.manifest_path, 'w') as f:
             f.write(manifest_id)
