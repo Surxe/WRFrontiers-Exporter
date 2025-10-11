@@ -168,7 +168,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 * Options are only required if their section's `SHOULD_` option is `True`
 
 ### Batch Export Options
-For customizing Batch Export's options, namely paths to export, see `src\cue4p-batchexport\BatchExport\README.md` after downloading dependencies. A custom needed exports and appsettings file can be created in the BatchExport installation directory as it is gitignored.
+For customizing Batch Export's options, namely paths to export, see `src\batch_export\BatchExport\README.md` after downloading dependencies. A custom needed exports and appsettings file can be created in the BatchExport installation directory as it is gitignored.
 
 ## Requirements
 
@@ -192,7 +192,7 @@ WRFrontiers-Exporter/
 │   │   ├── get_mapper.py            # DLL injection and mapper creation
 │   │   ├── simple_injector.py       # DLL injection utilities
 │   │   └── Dumper-7.dll             # UE4 SDK generation DLL
-│   └── cue4p-batchexport/   
+│   └── batch_export/   
 │       └── run_batch_export.py      # Asset export to JSON
 │       └── BatchExport/             # BatchExport installation (after downloaded)
 │           └── README.md/           # BatchExport documentation

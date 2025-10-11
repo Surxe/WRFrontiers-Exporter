@@ -53,7 +53,7 @@
 
 ### Dependencies & Tools
 * **DepotDownloader** - Steam content downloading tool
-* **BatchExport** - Game asset export utility (CUE4P-BatchExport)
+* **BatchExport** - Game asset export utility (batch_export)
 * **Dumper-7** - Unreal Engine SDK generation DLL
 * **Mapper / Mapping File** - Unreal Engine object mapping file (.usmap)
 

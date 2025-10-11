@@ -191,7 +191,7 @@ def run_batch_export(options, mapper_file_path):
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "run_batch_export", 
-            os.path.join(os.path.dirname(__file__), "cue4p-batchexport", "run_batch_export.py")
+            os.path.join(os.path.dirname(__file__), "batch_export", "run_batch_export.py")
         )
         run_batch_export_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(run_batch_export_module)

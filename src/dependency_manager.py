@@ -419,18 +419,18 @@ def install_batch_export(output_path=None, force=False):
     Install BatchExport dependency.
     
     Args:
-        output_path (str, optional): Path to install to. Defaults to src/cue4p-batchexport/BatchExport/
+        output_path (str, optional): Path to install to. Defaults to src/batch_export/BatchExport/
         force (bool): Force download even if same version exists
     """
     if output_path is None:
         script_dir = Path(__file__).parent
-        output_path = script_dir / "cue4p-batchexport" / "BatchExport"
+        output_path = script_dir / "batch_export" / "BatchExport"
     
     dm = DependencyManager()
     try:
         return dm.download_github_release_latest(
             repo_owner="Surxe",
-            repo_name="CUE4P-BatchExport", 
+            repo_name="batch_export", 
             asset_pattern=["BatchExport-windows-x64.zip", "README.md"],
             output_path=output_path,
             executable_name="BatchExport.exe",
