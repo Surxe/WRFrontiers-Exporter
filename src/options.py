@@ -72,8 +72,13 @@ class Options:
         else:
             args_dict = {}
 
+        # See STANDARDS.md 'Root Option'
+        self.root_options = [k for k in OPTIONS_SCHEMA if "section_options" in OPTIONS_SCHEMA[k]]
+
         # Process the schema to set all attributes
         options = self._process_schema(OPTIONS_SCHEMA, args_dict)
+
+        self.validate(options)
 
         # Set attributes dynamically using lowercase underscore format
         for key, value in options.items():
@@ -153,30 +158,30 @@ class Options:
                 for sub_option, sub_details in details["section_options"].items():
                     process_option(sub_option, sub_details)
 
-        # If none of the should-x options are in options, default all to true for ease of use
-        should_option_keys = [k for k in OPTIONS_SCHEMA if k != 'LOG_LEVEL']
-        if not any(key in options for key in should_option_keys):
-            for key in should_option_keys:
-                options[key] = True
-            logger.debug("No --should-x args provided, defaulting all to True")
-            
-        # If a --should-x is true, ensure options under its schema's section_options are provided (meaning not defaulted to None)
-        missing_options = []
-        for key in should_option_keys:
-            if options.get(key) is True:
-                section_options = OPTIONS_SCHEMA[key].get("section_options", {})
-                section = OPTIONS_SCHEMA[key]["section"]
+        # If none of the root options are in our options, default all to true for ease of use
+        if not any(root_option in options for root_option in self.root_options):
+            for root_option in self.root_options:
+                options[root_option] = True
+            logger.debug("No root options are set to true, defaulting all to True")
+
+        return options
+    
+    def validate(self, options):
+        # If a root option is true, ensure its sub-options are provided (meaning not defaulted to None)
+        for root_option in self.root_options:
+            missing_options = []
+            if options.get(root_option) is True:
+                section_options = OPTIONS_SCHEMA[root_option]["section_options"]
+                section = OPTIONS_SCHEMA[root_option]["section"]
                 if section_options:
-                    logger.debug(f"{key} is True, ensuring section_options for section {section} are provided")
+                    logger.debug(f"{root_option} is True, ensuring section_options for section {section} are provided")
                 for sub_option in section_options:
                     if options.get(sub_option) is None:
                         missing_options.append(sub_option)
                     logger.debug(f"Section option {sub_option} is set to {options[sub_option]}")
 
-        if missing_options:
-            raise ValueError(f"The following options must be provided when their section's --should-x is true: {', '.join(missing_options)}")
-
-        return options
+            if missing_options:
+                raise ValueError(f"The following options must be provided when their section's root option ({root_option}) is true: {', '.join(missing_options)}")
         
     def log(self):
         """
