@@ -167,7 +167,7 @@ class Options:
     
     def validate(self) -> None:
         # If a root option is true, ensure its sub-options are provided (meaning not defaulted to None)
-        options_as_dict = {k.upper(): v for k, v in self.__dict__.items() if k is not 'root_options'}
+        options_as_dict = {k.upper(): v for k, v in self.__dict__.items() if k != 'root_options'}
         for root_option in self.root_options:
             missing_options = []
             if options_as_dict.get(root_option) is True:

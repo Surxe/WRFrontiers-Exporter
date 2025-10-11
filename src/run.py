@@ -351,15 +351,12 @@ For detailed documentation including all command line arguments, configuration o
 and troubleshooting information, please see the README.md file.
 
 Quick Examples:
-  python run.py                              # Run all steps with default values
-  python run.py --skip-dependencies         # Skip dependency check/update
-  python run.py --log-level INFO            # Set log level to INFO
+  python run.py
         """
     )
     
     argument_writer = ArgumentWriter()
     argument_writer.add_arguments(parser)
-    
     args = parser.parse_args()
     
     # Run the main process with parsed arguments

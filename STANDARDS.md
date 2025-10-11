@@ -30,7 +30,7 @@
 ### Case
 * **Installation directories** - PascalCase (e.g., `BatchExport/`, `DepotDownlader/`)
 * **Documentation files** - ALLCAPSNOSPACE (e.g., `README.md`, `STANDARDS.md`)
-* **Other directories/files** - snake_case (e.g., `cue4p_batchexport/`, `build_scripts/`, `steam/`, `run_batch_export.py`)
+* **Other directories/files** - snake_case (e.g., `batch_export/`, `build_scripts/`, `steam/`, `run_batch_export.py`)
 
 ### Patterns
 * **Installation wrappers** - prefixed with `run_` (e.g., `run_depot_downloader.py`)
