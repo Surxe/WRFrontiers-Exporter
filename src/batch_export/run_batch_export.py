@@ -73,7 +73,7 @@ class BatchExporter:
         if not os.path.exists(self.options.steam_game_download_dir):
             raise FileNotFoundError(
                 f"Steam game download path not found: {self.options.steam_game_download_dir}. "
-                "Please ensure STEAM_GAME_DOWNLOAD_PATH is set correctly in your environment."
+                "Please ensure STEAM_GAME_DOWNLOAD_DIR is set correctly in your environment."
             )
         
         # Create output data directory if it doesn't exist

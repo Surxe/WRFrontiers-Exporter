@@ -132,7 +132,7 @@ class TestOptions(unittest.TestCase):
             'FORCE_STEAM_DOWNLOAD': 'False',
             'STEAM_USERNAME': 'envuser',
             'STEAM_PASSWORD': 'envpass',
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "env.usmap"),
@@ -169,7 +169,7 @@ class TestOptions(unittest.TestCase):
             'STEAM_USERNAME': 'envuser',
             'STEAM_PASSWORD': 'envpass',
             'SHOULD_DOWNLOAD_STEAM_GAME': 'True',
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "test.usmap"),
@@ -206,7 +206,7 @@ class TestOptions(unittest.TestCase):
             'LOG_LEVEL': 'DEBUG',
             'SHOULD_DOWNLOAD_DEPENDENCIES': 'true',  # String boolean
             'FORCE_DOWNLOAD_DEPENDENCIES': 'false',  # String boolean
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,  # Should become Path
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,  # Should become Path
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,  # Should become Path
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "test.usmap"),  # Should become Path
@@ -238,7 +238,7 @@ class TestOptions(unittest.TestCase):
             'SHOULD_DOWNLOAD_STEAM_GAME': 'True',
             'STEAM_USERNAME': 'testuser',
             'STEAM_PASSWORD': 'testpass',
-            'STEAM_GAME_DOWNLOAD_PATH': self.steam_dir,
+            'STEAM_GAME_DOWNLOAD_DIR': self.steam_dir,
             'SHOULD_GET_MAPPER': 'True',
             'DUMPER7_OUTPUT_DIR': self.dumper_dir,
             'OUTPUT_MAPPER_FILE': os.path.join(self.mapper_dir, "test.usmap"),
