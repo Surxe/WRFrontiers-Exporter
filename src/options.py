@@ -99,7 +99,6 @@ class Options:
         logger.add(log_path, level=self.log_level, rotation="10 MB", retention="10 days", enqueue=True)
         logger.add(sys.stdout, level=self.log_level)
         
-        self.validate()
         self.log()
 
     def _process_schema(self, schema, args_dict):
@@ -178,13 +177,6 @@ class Options:
             raise ValueError(f"The following options must be provided when their section's --should-x is true: {', '.join(missing_options)}")
 
         return options
-
-    def validate(self):
-        """
-        Validates the options.
-        """
-        
-        
         
     def log(self):
         """
