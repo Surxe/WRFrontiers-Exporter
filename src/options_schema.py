@@ -113,7 +113,7 @@ OPTIONS_SCHEMA = {
                 "type": Path,
                 "default": None,
                 "help": "Path to the where Dumper7 outputs its generated SDK.",
-                "help_extended": "If unsure where this is, it is likely C:/Dumper-7. Confirm by running the mapper, letting it fail, and checking for the dir."
+                "help_extended": "If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir."
             },
             "OUTPUT_MAPPER_FILE": {
                 "env": "OUTPUT_MAPPER_FILE",
