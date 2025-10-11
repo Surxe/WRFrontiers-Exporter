@@ -5,13 +5,14 @@ import subprocess
 import os
 import shutil
 from loguru import logger
+from typing import Union, List, Optional, Any
 load_dotenv()
 
 ###############################
 #           Options            #
 ###############################
 
-def is_truthy(string):
+def is_truthy(string: Any) -> bool:
     TRUE_THO = [
         True,
         'true',
@@ -51,7 +52,7 @@ def normalize_path(path: str) -> str:
 #           Process           #
 ###############################
 
-def run_process(options, name='', timeout=60*60, background=False): #times out after 1hr
+def run_process(options: Union[List[str], str], name: str = '', timeout: int = 60*60, background: bool = False) -> Optional[subprocess.Popen]: #times out after 1hr
     """Runs a subprocess with the given options and logs its output line by line
 
     Args:
@@ -150,7 +151,7 @@ def run_process(options, name='', timeout=60*60, background=False): #times out a
     if exit_code != 0:
         raise Exception(f'Process {name} exited with code {exit_code}')
 
-def wait_for_process_by_name(process_name, timeout=60):
+def wait_for_process_by_name(process_name: str, timeout: int = 60) -> int:
     """Wait for a process with the given name to start
     
     Args:
@@ -235,7 +236,7 @@ def wait_for_process_by_name(process_name, timeout=60):
     
     raise Exception(f"Process {process_name} not found within {timeout} seconds")
 
-def terminate_process_by_name(process_name):
+def terminate_process_by_name(process_name: str) -> bool:
     """Terminate a process by name
     
     Args:
@@ -273,7 +274,7 @@ def terminate_process_by_name(process_name):
             logger.warning(f"Error terminating {process_name}: {e}")
             return False
 
-def is_admin():
+def is_admin() -> bool:
     """Check if the current process is running with administrator privileges"""
     try:
         import ctypes
@@ -281,7 +282,7 @@ def is_admin():
     except:
         return False
 
-def wait_for_process_ready_for_injection(process_name, initialization_time=30):
+def wait_for_process_ready_for_injection(process_name: str, initialization_time: int = 30) -> int:
     """Wait for a process to be ready for DLL injection
     
     This function waits for the process to not only exist, but also be in a state
@@ -328,7 +329,7 @@ def wait_for_process_ready_for_injection(process_name, initialization_time=30):
     logger.info(f"Process {process_name} should now be ready for injection")
     return pid
 
-def terminate_process_object(process, name=''):
+def terminate_process_object(process: subprocess.Popen, name: str = '') -> bool:
     """Terminate a subprocess.Popen process object
     
     Args:

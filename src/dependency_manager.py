@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 import json
+from typing import Optional, Union, List
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from loguru import logger
@@ -21,12 +22,12 @@ class DependencyManager:
     to specified output directories with proper validation and cleanup.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the dependency manager."""
         self.temp_dir = Path.cwd() / ".temp"
         self.temp_dir.mkdir(exist_ok=True)
     
-    def _get_installed_version(self, output_path):
+    def _get_installed_version(self, output_path: Union[str, Path]) -> Optional[str]:
         """
         Get the currently installed version from version.txt file.
         
@@ -45,7 +46,7 @@ class DependencyManager:
                 return None
         return None
     
-    def _write_version_file(self, output_path, version):
+    def _write_version_file(self, output_path: Union[str, Path], version: str) -> None:
         """
         Write the version to version.txt file in the output directory.
         
@@ -60,7 +61,7 @@ class DependencyManager:
         except Exception as e:
             logger.warning(f"Could not write version file: {e}")
     
-    def download_and_extract(self, download_url, output_path, executable_name=None, create_output_dir=True, version=None):
+    def download_and_extract(self, download_url: str, output_path: Union[str, Path], executable_name: Optional[str] = None, create_output_dir: bool = True, version: Optional[str] = None) -> bool:
         """
         Download a ZIP file from a URL and extract it to the specified path.
         
@@ -154,7 +155,7 @@ class DependencyManager:
                 zip_path.unlink()
             raise
     
-    def download_github_release_latest(self, repo_owner, repo_name, asset_pattern, output_path, executable_name=None, force=False):
+    def download_github_release_latest(self, repo_owner: str, repo_name: str, asset_pattern: Union[str, List[str]], output_path: Union[str, Path], executable_name: Optional[str] = None, force: bool = False) -> bool:
         """
         Download the latest release from a GitHub repository.
         
@@ -237,7 +238,7 @@ class DependencyManager:
             logger.error(f"Failed to download latest release: {e}")
             raise
     
-    def _download_single_file(self, url, output_path):
+    def _download_single_file(self, url: str, output_path: Path) -> None:
         """
         Download a single file (non-ZIP) from URL to output path.
         
@@ -264,11 +265,11 @@ class DependencyManager:
         except Exception as e:
             raise Exception(f"Failed to download single file: {e}")
 
-    def _get_filename_from_url(self, url):
+    def _get_filename_from_url(self, url: str) -> str:
         """Extract filename from URL."""
         return Path(url).name or "download.zip"
     
-    def _download_file(self, url, output_path):
+    def _download_file(self, url: str, output_path: Path) -> None:
         """Download a file from URL to local path."""
         try:
             logger.info(f"Downloading file...")
@@ -301,7 +302,7 @@ class DependencyManager:
         except (URLError, HTTPError) as e:
             raise Exception(f"Failed to download file: {e}")
     
-    def _get_json_from_url(self, url):
+    def _get_json_from_url(self, url: str) -> dict:
         """Get JSON data from URL."""
         try:
             req = Request(url, headers={'User-Agent': 'WRFrontiers-Exporter'})
@@ -310,7 +311,7 @@ class DependencyManager:
         except (URLError, HTTPError, json.JSONDecodeError) as e:
             raise Exception(f"Failed to fetch JSON from {url}: {e}")
     
-    def _validate_zip_file(self, zip_path):
+    def _validate_zip_file(self, zip_path: Path) -> bool:
         """Validate that the file is a proper ZIP archive."""
         try:
             file_size = zip_path.stat().st_size
@@ -335,7 +336,7 @@ class DependencyManager:
             logger.error(f"Error validating ZIP file: {e}")
             return False
     
-    def _extract_zip(self, zip_path, output_path):
+    def _extract_zip(self, zip_path: Path, output_path: Path) -> None:
         """Extract ZIP file to output directory."""
         try:
             with zipfile.ZipFile(zip_path, 'r') as zf:
@@ -358,7 +359,7 @@ class DependencyManager:
         except Exception as e:
             raise Exception(f"Failed to extract ZIP file: {e}")
     
-    def _flatten_extraction(self, output_path):
+    def _flatten_extraction(self, output_path: Path) -> None:
         """
         If extraction created a single subdirectory containing all files,
         move the files up to the main output directory.
@@ -385,7 +386,7 @@ class DependencyManager:
             subdir.rmdir()
             logger.debug("Flattened directory structure")
     
-    def _verify_executable(self, output_path, executable_name):
+    def _verify_executable(self, output_path: Path, executable_name: str) -> None:
         """Verify that the expected executable was extracted."""
         executable_path = output_path / executable_name
         
@@ -407,14 +408,14 @@ class DependencyManager:
         if hasattr(os, 'chmod'):
             executable_path.chmod(0o755)
     
-    def cleanup_temp_files(self):
+    def cleanup_temp_files(self) -> None:
         """Clean up temporary download directory."""
         if self.temp_dir.exists():
             shutil.rmtree(self.temp_dir)
             logger.debug("Cleaned up temporary download directory")
 
 
-def install_batch_export(output_path=None, force=False):
+def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
     """
     Install BatchExport dependency.
     
@@ -440,7 +441,7 @@ def install_batch_export(output_path=None, force=False):
         dm.cleanup_temp_files()
 
 
-def install_depot_downloader(output_path=None, force=False):
+def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
     """
     Install DepotDownloader dependency from the latest GitHub release.
     
@@ -466,7 +467,7 @@ def install_depot_downloader(output_path=None, force=False):
         dm.cleanup_temp_files()
 
 
-def main(force_download=False):
+def main(force_download: bool = False) -> bool:
     """
     Main function to install all dependencies.
     

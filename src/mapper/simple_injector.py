@@ -6,6 +6,7 @@ from ctypes import wintypes
 import psutil
 import os
 from loguru import logger
+from typing import Optional
 
 # Windows constants
 PROCESS_CREATE_THREAD = 0x0002
@@ -21,11 +22,11 @@ INFINITE = 0xFFFFFFFF
 MEM_RELEASE = 0x8000
 
 class SimpleDLLInjector:
-    def __init__(self):
+    def __init__(self) -> None:
         # Define function prototypes upfront
         self._setup_function_prototypes()
         
-    def _setup_function_prototypes(self):
+    def _setup_function_prototypes(self) -> None:
         # OpenProcess
         ctypes.windll.kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
         ctypes.windll.kernel32.OpenProcess.restype = wintypes.HANDLE
@@ -65,7 +66,7 @@ class SimpleDLLInjector:
         ctypes.windll.kernel32.GetExitCodeThread.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
         ctypes.windll.kernel32.GetExitCodeThread.restype = wintypes.BOOL
 
-    def get_process_id_by_name(self, process_name):
+    def get_process_id_by_name(self, process_name: str) -> Optional[int]:
         """Get process ID by process name"""
         for proc in psutil.process_iter(['pid', 'name']):
             try:
@@ -75,7 +76,7 @@ class SimpleDLLInjector:
                 continue
         return None
 
-    def inject_dll(self, process_name, dll_path):
+    def inject_dll(self, process_name: str, dll_path: str) -> bool:
         """Inject DLL into target process"""
         logger.info(f"Starting DLL injection: {dll_path} -> {process_name}")
         
@@ -192,7 +193,7 @@ class SimpleDLLInjector:
         finally:
             ctypes.windll.kernel32.CloseHandle(h_process)
 
-def inject_dll_into_process(process_name, dll_path):
+def inject_dll_into_process(process_name: str, dll_path: str) -> bool:
     """Convenience function for DLL injection"""
     injector = SimpleDLLInjector()
     return injector.inject_dll(process_name, dll_path)

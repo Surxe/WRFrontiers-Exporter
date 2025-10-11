@@ -18,17 +18,19 @@ Example:
 import sys
 import os
 import time
+from typing import Optional
+from argparse import Namespace
 
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from options import init_options, ArgumentWriter
+from options import init_options, ArgumentWriter, Options
 from loguru import logger
 import traceback
 from dependency_manager import main as dependency_main
 
 
-def run_dependency_manager(options):
+def run_dependency_manager(options: Options) -> bool:
     """
     Run the dependency manager to download/update all required dependencies.
     
@@ -68,7 +70,7 @@ def run_dependency_manager(options):
         return False
 
 
-def run_steam_download_update(options):
+def run_steam_download_update(options: Options) -> bool:
     """
     Run DepotDownloader to download/update the latest War Robots Frontiers game version.
     
@@ -118,7 +120,7 @@ def run_steam_download_update(options):
         return False
 
 
-def run_mapper_creation(options):
+def run_mapper_creation(options: Options) -> Optional[str]:
     """
     Run DLL injection process to create the mapper file.
     
@@ -168,7 +170,7 @@ def run_mapper_creation(options):
         return None
 
 
-def run_batch_export(options, mapper_file_path):
+def run_batch_export(options: Options, mapper_file_path: str) -> bool:
     """
     Run BatchExport to convert game assets to JSON format.
     
@@ -227,7 +229,7 @@ def run_batch_export(options, mapper_file_path):
         return False
 
 
-def validate_environment(options):
+def validate_environment(options: Options) -> bool:
     """
     Validate that all required environment variables and paths are properly configured.
     
@@ -251,7 +253,7 @@ def validate_environment(options):
         return False
 
 
-def main(args):
+def main(args: Namespace) -> bool:
     """
     Main function to run the complete WRFrontiers-Exporter process.
         
