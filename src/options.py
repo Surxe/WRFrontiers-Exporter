@@ -167,17 +167,18 @@ class Options:
     
     def validate(self) -> None:
         # If a root option is true, ensure its sub-options are provided (meaning not defaulted to None)
+        options_as_dict = {k.upper(): v for k, v in self.__dict__.items() if k is not 'root_options'}
         for root_option in self.root_options:
             missing_options = []
-            if self.__dict__.get(root_option) is True:
+            if options_as_dict.get(root_option) is True:
                 section_options = OPTIONS_SCHEMA[root_option]["section_options"]
                 section = OPTIONS_SCHEMA[root_option]["section"]
                 if section_options:
                     logger.debug(f"{root_option} is True, ensuring section_options for section {section} are provided")
                 for sub_option in section_options:
-                    if self.__dict__.get(sub_option) is None:
+                    if options_as_dict.get(sub_option) is None:
                         missing_options.append(sub_option)
-                    logger.debug(f"Section option {sub_option} is set to {self.__dict__[sub_option]}")
+                    logger.debug(f"Section option {sub_option} is set to {options_as_dict.get(sub_option)}")
 
             if missing_options:
                 raise ValueError(f"The following options must be provided when their section's root option ({root_option}) is true: {', '.join(missing_options)}")
