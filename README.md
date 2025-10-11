@@ -119,7 +119,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 
 * **STEAM_GAME_DOWNLOAD_DIR** - Path to the local Steam game installation directory.
   - Default: None - required if section enabled
-  - Command line: `--steam-game-download-path`
+  - Command line: `--steam-game-download-dir`
 
 
 #### Mapping

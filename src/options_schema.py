@@ -85,7 +85,7 @@ OPTIONS_SCHEMA = {
             },
             "STEAM_GAME_DOWNLOAD_DIR": {
                 "env": "STEAM_GAME_DOWNLOAD_DIR",
-                "arg": "--steam-game-download-path",
+                "arg": "--steam-game-download-dir",
                 "type": Path,
                 "default": None,
                 "help": "Path to the local Steam game installation directory.",
