@@ -161,7 +161,7 @@ class DependencyManager:
         Args:
             repo_owner (str): GitHub repository owner
             repo_name (str): GitHub repository name
-            asset_pattern (str): Pattern to match asset name (e.g., "windows-x64.zip")
+            asset_pattern (str or list): Pattern(s) to match asset name (e.g., "windows-x64.zip" or ["BatchExport-windows-x64.zip", "README.md"])
             output_path (str or Path): Directory to extract to
             executable_name (str, optional): Name of main executable to verify
             force (bool): Force download even if same version exists
@@ -192,27 +192,78 @@ class DependencyManager:
             else:
                 logger.info("Force download enabled, downloading regardless of current version")
             
-            # Find matching asset
+            # Find matching assets
             assets = release_info.get('assets', [])
-            matching_asset = None
+            matching_assets = []
             
-            for asset in assets:
-                if asset_pattern in asset['name']:
-                    matching_asset = asset
-                    break
+            # Normalize asset_pattern to a list
+            patterns = asset_pattern if isinstance(asset_pattern, list) else [asset_pattern]
             
-            if not matching_asset:
-                raise Exception(f"No asset found matching pattern: {asset_pattern}")
+            for pattern in patterns:
+                for asset in assets:
+                    if pattern in asset['name']:
+                        matching_assets.append(asset)
+                        logger.info(f"Found matching asset: {asset['name']} (pattern: {pattern})")
+                        break
+                else:
+                    # This pattern didn't match any asset
+                    logger.warning(f"No asset found matching pattern: {pattern}")
             
-            download_url = matching_asset['browser_download_url']
-            logger.info(f"Found matching asset: {matching_asset['name']}")
+            if not matching_assets:
+                raise Exception(f"No assets found matching patterns: {patterns}")
             
-            return self.download_and_extract(download_url, output_path, executable_name, version=version)
+            # Download and extract all matching assets
+            success = True
+            for asset in matching_assets:
+                download_url = asset['browser_download_url']
+                logger.info(f"Processing asset: {asset['name']}")
+                
+                try:
+                    # For non-ZIP files (like README.md), just download them directly
+                    if not asset['name'].lower().endswith('.zip'):
+                        self._download_single_file(download_url, output_path / asset['name'])
+                    else:
+                        # For ZIP files, use the existing extraction logic
+                        result = self.download_and_extract(download_url, output_path, executable_name, version=version)
+                        if not result:
+                            success = False
+                except Exception as e:
+                    logger.error(f"Failed to process asset {asset['name']}: {e}")
+                    success = False
+            
+            return success
             
         except Exception as e:
             logger.error(f"Failed to download latest release: {e}")
             raise
     
+    def _download_single_file(self, url, output_path):
+        """
+        Download a single file (non-ZIP) from URL to output path.
+        
+        Args:
+            url (str): URL to download from
+            output_path (Path): Full path including filename to save to
+        """
+        try:
+            logger.info(f"Downloading single file: {output_path.name}")
+            
+            # Ensure the output directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Download the file
+            req = Request(url, headers={'User-Agent': 'WRFrontiers-Exporter'})
+            
+            with urlopen(req) as response:
+                with open(output_path, 'wb') as f:
+                    f.write(response.read())
+            
+            file_size = output_path.stat().st_size
+            logger.info(f"Downloaded {output_path.name} ({file_size} bytes)")
+            
+        except Exception as e:
+            raise Exception(f"Failed to download single file: {e}")
+
     def _get_filename_from_url(self, url):
         """Extract filename from URL."""
         return Path(url).name or "download.zip"
@@ -380,7 +431,7 @@ def install_batch_export(output_path=None, force=False):
         return dm.download_github_release_latest(
             repo_owner="Surxe",
             repo_name="CUE4P-BatchExport", 
-            asset_pattern="BatchExport-windows-x64.zip",
+            asset_pattern=["BatchExport-windows-x64.zip", "README.md"],
             output_path=output_path,
             executable_name="BatchExport.exe",
             force=force
