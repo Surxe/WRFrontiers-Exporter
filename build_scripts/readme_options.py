@@ -152,7 +152,7 @@ def validate_generated_docs():
             
             # Check for expected content
             if filename == "readme_options_section.md":
-                sections = ['Both', 'Parse', 'Push']
+                sections = ['Logging', 'Dependencies', 'Steam Download', 'Mapping', 'Batch Export']
                 for section in sections:
                     if f"#### {section}" not in content:
                         print(f"Warning: {filename} missing expected section: {section}")
