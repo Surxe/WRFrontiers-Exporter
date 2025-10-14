@@ -8,8 +8,6 @@ from pathlib import Path
 from loguru import logger
 load_dotenv()
 
-from utils import is_truthy
-
 """
 Central configuration schema to provide a single source of truth for all documentation and functionality of options/args
 """
@@ -26,7 +24,7 @@ class ArgumentWriter:
         self.schema = OPTIONS_SCHEMA
 
     def add_arguments(self, parser: ArgumentParser):
-        def parse_details(details: dict):
+        for option_name, details in self.schema.items():
             arg_name = details["arg"]
             arg_type = details["type"]
             default = details["default"]
@@ -48,14 +46,6 @@ class ArgumentWriter:
                 parser.add_argument(arg_name, type=arg_type, default=None, help=help_text)
                 logger.debug(f"Added argument {arg_name} with type {arg_type} and default {default}")
 
-            # Add section options if any
-            if "section_options" in details:
-                for sub_option, sub_details in details["section_options"].items():
-                    parse_details(sub_details)
-
-        for option, details in self.schema.items():
-            parse_details(details)
-
 class Options:
     """
     A class to hold options for the application.
@@ -73,8 +63,16 @@ class Options:
         else:
             args_dict = {}
 
-        # See STANDARDS.md 'Root Option'
-        self.root_options = [k for k in OPTIONS_SCHEMA if "section_options" in OPTIONS_SCHEMA[k]]
+        # Identify root options (options that other options depend on)
+        self.root_options = []
+        for option_name, details in OPTIONS_SCHEMA.items():
+            # An option is a root option if other options depend on it
+            is_root = any(
+                option_name in OPTIONS_SCHEMA[other_option].get("depends_on", [])
+                for other_option in OPTIONS_SCHEMA
+            )
+            if is_root:
+                self.root_options.append(option_name)
 
         # Process the schema to set all attributes
         options = self._process_schema(OPTIONS_SCHEMA, args_dict)
@@ -108,12 +106,12 @@ class Options:
         self.log()
 
     def _process_schema(self, schema: dict, args_dict: dict) -> dict:
-        """Process the option schema, env params, and args to get the combined options."""
+        """Process the option schema, env options, and args to get the combined options."""
 
-        # Combine args and options
         options = {}
 
-        def process_option(option_name: str, details: dict) -> None:
+        # Process all options in the schema
+        for option_name, details in schema.items():
             # Convert arg name to attribute name (remove -- and convert - to _)
             attr_name = details["arg"].lstrip('--').replace('-', '_')
             
@@ -147,41 +145,54 @@ class Options:
             
             # Store
             options[option_name] = value
-        
-        # Process all options in the schema
-        for option_name, details in schema.items():
-            process_option(option_name, details)
-            
-            # Process section_options if they exist
-            if "section_options" in details:
-                for sub_option, sub_details in details["section_options"].items():
-                    process_option(sub_option, sub_details)
 
-        # If none of the root options are in our options, default all to true for ease of use
-        if not any(root_option in options for root_option in self.root_options):
+        # If none of the root options have been explicitly set (from args or env), default all to true for ease of use
+        # Check if any root option was explicitly provided (not just defaulted from schema)
+        explicitly_set_root_options = []
+        for root_option in self.root_options:
+            attr_name = OPTIONS_SCHEMA[root_option]["arg"].lstrip('--').replace('-', '_')
+            # Check if it was in args or environment
+            if (attr_name in args_dict and args_dict[attr_name] is not None) or \
+               OPTIONS_SCHEMA[root_option]["env"] in os.environ:
+                explicitly_set_root_options.append(root_option)
+        
+        if not explicitly_set_root_options:
+            # No root options were explicitly set, default all to True
             for root_option in self.root_options:
                 options[root_option] = True
-            logger.debug("No root options are set to true, defaulting all to True")
+            logger.debug("No root options explicitly set, defaulting all to True")
 
         return options
     
     def validate(self) -> None:
-        # If a root option is true, ensure its sub-options are provided (meaning not defaulted to None)
+        # Validate that options with dependencies have their requirements met
         options_as_dict = {k.upper(): v for k, v in self.__dict__.items() if k != 'root_options'}
-        for root_option in self.root_options:
-            missing_options = []
-            if options_as_dict.get(root_option) is True:
-                section_options = OPTIONS_SCHEMA[root_option]["section_options"]
-                section = OPTIONS_SCHEMA[root_option]["section"]
-                if section_options:
-                    logger.debug(f"{root_option} is True, ensuring section_options for section {section} are provided")
-                for sub_option in section_options:
-                    if options_as_dict.get(sub_option) is None:
-                        missing_options.append(sub_option)
-                    logger.debug(f"Section option {sub_option} is set to {options_as_dict.get(sub_option)}")
-
-            if missing_options:
-                raise ValueError(f"The following options must be provided when their section's root option ({root_option}) is true: {', '.join(missing_options)}")
+        
+        # Check each option that has dependencies
+        for option_name, details in OPTIONS_SCHEMA.items():
+            depends_on_list = details.get("depends_on", [])
+            if not depends_on_list:
+                continue
+            
+            # Check if ANY of the dependencies are True
+            any_dependency_true = any(
+                options_as_dict.get(dep_option) is True
+                for dep_option in depends_on_list
+            )
+            
+            if any_dependency_true:
+                value = options_as_dict.get(option_name)
+                if value is None:
+                    # Build a helpful error message
+                    active_dependencies = [
+                        dep for dep in depends_on_list
+                        if options_as_dict.get(dep) is True
+                    ]
+                    raise ValueError(
+                        f"{option_name} is required when any of the following are true: "
+                        f"{', '.join(depends_on_list)}. Currently active: {', '.join(active_dependencies)}"
+                    )
+                logger.debug(f"Dependent option {option_name} is set to {value}")
         
     def log(self):
         """
@@ -190,7 +201,7 @@ class Options:
         # Dynamically log all attributes that were set from the schema
         log_lines = ["Options initialized with:"]
         
-        def log_option(option_name: str, details: dict):
+        for option_name, details in OPTIONS_SCHEMA.items():
             attr_name = details["arg"].lstrip('--').replace('-', '_')
             if hasattr(self, attr_name):
                 value = getattr(self, attr_name)
@@ -199,15 +210,6 @@ class Options:
                     value = "***HIDDEN***"
                 log_lines.append(f"{option_name}: {value}")
         
-        # Log all options from schema
-        for option_name, details in OPTIONS_SCHEMA.items():
-            log_option(option_name, details)
-            
-            # Log section_options if they exist
-            if "section_options" in details:
-                for sub_option, sub_details in details["section_options"].items():
-                    log_option(sub_option, sub_details)
-        
         logger.info("\n".join(log_lines))
     
 # Helper to initialize OPTIONS with direct args if available
@@ -215,3 +217,15 @@ def init_options(args: Namespace | None = None):
     global OPTIONS
     OPTIONS = Options(args)
     return OPTIONS
+
+def is_truthy(string):
+    TRUE_THO = [
+        True,
+        'true',
+        'True',
+        'TRUE',
+        't',
+        'T',
+        1,
+    ]
+    return string in TRUE_THO

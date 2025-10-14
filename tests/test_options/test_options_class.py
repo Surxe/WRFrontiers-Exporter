@@ -60,18 +60,32 @@ class TestOptions(unittest.TestCase):
     @patch.object(src_options, 'logger')
     @patch('builtins.print')  # Mock print to avoid console output during tests
     def test_options_init_with_no_args(self, mock_print, mock_logger):
-        """Test Options initialization with no arguments (should use defaults)."""
+        """Test Options initialization with no arguments - all root options default to True and require dependent options."""
         # Mock logger.add and logger.remove to avoid actual logging setup
         mock_logger.add = Mock()
         mock_logger.remove = Mock()
         
-        with patch.dict(os.environ, {}, clear=True):
+        # When no args are provided, all root options default to True (ease-of-use logic)
+        # This means dependent options must be provided
+        env_vars = {
+            'STEAM_USERNAME': 'test_user',
+            'STEAM_PASSWORD': 'test_pass',
+            'STEAM_GAME_DOWNLOAD_DIR': '/path/to/game',
+            'DUMPER7_OUTPUT_DIR': '/path/to/dumper7',
+            'OUTPUT_MAPPER_FILE': '/path/to/mapper.usmap',
+            'OUTPUT_DATA_DIR': '/path/to/output'
+        }
+        
+        with patch.dict(os.environ, env_vars, clear=True):
             options = Options()
         
-        # Should have all default values
+        # Should have all default values for non-root options
         self.assertEqual(options.log_level, "DEBUG")  # Default from schema
-        self.assertFalse(options.should_download_dependencies)  # Default False, but may be True due to ease-of-use logic
-        self.assertTrue(hasattr(options, 'should_download_steam_game'))
+        # Root options should all be True (ease-of-use logic when nothing is explicitly set)
+        self.assertTrue(options.should_download_dependencies)
+        self.assertTrue(options.should_download_steam_game)
+        self.assertTrue(options.should_get_mapper)
+        self.assertTrue(options.should_batch_export)
 
     @patch.object(src_options, 'logger')
     @patch('builtins.print')
@@ -261,11 +275,11 @@ class TestOptions(unittest.TestCase):
     @patch.object(src_options, 'logger')
     @patch('builtins.print')
     def test_options_missing_required_section_options_raises_error(self, mock_print, mock_logger):
-        """Test that missing required section options raise ValueError."""
+        """Test that missing required dependent options raise ValueError."""
         mock_logger.add = Mock()
         mock_logger.remove = Mock()
         
-        # Enable should_download_steam_game but don't provide required section options
+        # Enable should_download_steam_game but don't provide required dependent options
         args = create_args(
             should_download_steam_game=True,
             # Missing: steam_username, steam_password, steam_game_download_dir
@@ -278,7 +292,7 @@ class TestOptions(unittest.TestCase):
                 Options(args)
             
             error_message = str(context.exception)
-            self.assertIn("following options must be provided", error_message)
+            self.assertIn("is required when any of the following are true", error_message)
             self.assertIn("STEAM_USERNAME", error_message)
 
     @patch.object(src_options, 'logger')
@@ -505,8 +519,14 @@ class TestOptions(unittest.TestCase):
         mock_logger.add = Mock()
         mock_logger.remove = Mock()
         
-        # Create a minimal test case
-        args = create_args(log_level="WARNING")
+        # Create a minimal test case with all dependent options to avoid validation errors
+        args = create_args(
+            log_level="WARNING",
+            should_download_dependencies=False,
+            should_download_steam_game=False,
+            should_get_mapper=False,
+            should_batch_export=False
+        )
         
         with patch.dict(os.environ, {}, clear=True):
             options = Options(args)
