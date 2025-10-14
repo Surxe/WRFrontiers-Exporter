@@ -135,7 +135,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--should-get-mapper`
 
 * **FORCE_GET_MAPPER** - Re-generate the mapping file even if it already exists.
-  - Default: `"true"`
+  - Default: `"false"`
   - Command line: `--force-get-mapper`
   - Depends on: `SHOULD_GET_MAPPER`
 
@@ -158,7 +158,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--should-batch-export`
 
 * **FORCE_EXPORT** - Re-run the BatchExport even if output directory is not empty.
-  - Default: `"true"`
+  - Default: `"false"`
   - Command line: `--force-export`
   - Depends on: `SHOULD_BATCH_EXPORT`
 
