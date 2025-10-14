@@ -82,7 +82,7 @@ class Options:
             # Convert schema key (UPPER_CASE) to attribute name (lower_case)
             attr_name = key.lower()
             setattr(self, attr_name, value)
-            logger.debug(f"Set attribute {attr_name} to value: {value}")
+            logger.debug(f"Set attribute {attr_name} to value: {value if not details.get('sensitive', False) else '***HIDDEN***'}")
 
         self.validate()
 
@@ -192,7 +192,7 @@ class Options:
                         f"{option_name} is required when any of the following are true: "
                         f"{', '.join(depends_on_list)}. Currently active: {', '.join(active_dependencies)}"
                     )
-                logger.debug(f"Dependent option {option_name} is set to {value}")
+                logger.debug(f"Dependent option {option_name} is set to {value if not details.get('sensitive', False) else '***HIDDEN***'} as required.")
         
     def log(self):
         """
