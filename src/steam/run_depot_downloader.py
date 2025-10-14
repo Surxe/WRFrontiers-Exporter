@@ -27,7 +27,7 @@ class DepotDownloader:
         self.manifest_path = os.path.join(self.wrf_dir, 'manifest.txt')
         self.force = force
 
-    def run(self, manifest_id: Optional[str]) -> None:
+    def run(self, manifest_id: Optional[str | None]) -> None:
         # no input manifest id downloads the latest version
         if manifest_id is None:
             manifest_id = self._get_latest_manifest_id()
@@ -37,10 +37,12 @@ class DepotDownloader:
         downloaded_manifest_id = self._read_downloaded_manifest_id()
         if downloaded_manifest_id == manifest_id and not self.force:
             logger.info(f'Already downloaded manifest {manifest_id}')
-            return
+            return True
 
         self._download(manifest_id)
         self._write_downloaded_manifest_id(manifest_id)
+
+        return True
 
     def _download(self, manifest_id: str) -> None:
         logger.debug(f'Downloading game with manifest id {manifest_id}')
@@ -57,7 +59,7 @@ class DepotDownloader:
         ]
         run_process(subprocess_options, name='download-game-files')
 
-        # todo, verify files are downloaded
+        #TODO, verify files are downloaded
 
     def _read_downloaded_manifest_id(self) -> Optional[str]:
         if not os.path.exists(self.manifest_path):
