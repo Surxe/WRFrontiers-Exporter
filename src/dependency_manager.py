@@ -431,7 +431,7 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
     try:
         return dm.download_github_release_latest(
             repo_owner="Surxe",
-            repo_name="batch_export", 
+            repo_name="CUE4P-BatchExport", 
             asset_pattern=["BatchExport-windows-x64.zip", "README.md"],
             output_path=output_path,
             executable_name="BatchExport.exe",
