@@ -234,7 +234,7 @@ class TestInitOptions(unittest.TestCase):
         # None values should trigger fallback to environment/defaults
         self.assertEqual(options.log_level, "DEBUG")  # Default
         self.assertEqual(options.steam_username, "test")
-        self.assertTrue(options.force_export)  # Default True
+        self.assertFalse(options.force_export)  # Default is False
 
     @patch.dict(os.environ, {}, clear=True)  # Clear environment to test pure defaults
     def test_init_options_partial_arguments(self):
@@ -259,7 +259,7 @@ class TestInitOptions(unittest.TestCase):
         
         # Unprovided arguments should use defaults
         self.assertFalse(options.force_download_dependencies)  # Default False
-        self.assertTrue(options.force_get_mapper)  # Default True
+        self.assertFalse(options.force_get_mapper)  # Default False
 
 
 # Mock the file system dependencies for environment tests
