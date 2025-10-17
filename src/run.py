@@ -55,6 +55,10 @@ def run_dependency_manager(options: Options) -> bool:
         elapsed_time = end_time - start_time
         logger.debug(f"Dependency manager timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
         logger.debug(f"Dependency manager execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+
+        if not result:
+            logger.error("Dependency manager reported failure.")
+            return False
         
         logger.success("Dependency manager completed successfully!")
         return True
@@ -99,13 +103,17 @@ def run_steam_download_update(options: Options) -> bool:
             steam_password=options.steam_password,
             force=options.force_steam_download,
         )
-        result = downloader.run(manifest_id=options.manifest_id)
-        
+        manifest_id = None if options.manifest_id == "" else options.manifest_id
+        result = downloader.run(manifest_id=manifest_id)
+
         end_time = time.time()
         elapsed_time = end_time - start_time
         logger.debug(f"Steam download/update timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
         logger.debug(f"Steam download/update execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
         
+        if not result:
+            logger.error("Steam download/update reported failure.")
+            return False
         logger.success("Steam download/update completed successfully!")
         return True
         

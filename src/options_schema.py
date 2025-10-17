@@ -110,7 +110,7 @@ OPTIONS_SCHEMA = {
         "env": "FORCE_GET_MAPPER",
         "arg": "--force-get-mapper",
         "type": bool,
-        "default": True,
+        "default": False,
         "help": "Re-generate the mapping file even if it already exists.",
         "section": "Mapping",
         "depends_on": ["SHOULD_GET_MAPPER"]
@@ -146,7 +146,7 @@ OPTIONS_SCHEMA = {
         "env": "FORCE_EXPORT",
         "arg": "--force-export",
         "type": bool,
-        "default": True,
+        "default": False,
         "help": "Re-run the BatchExport even if output directory is not empty.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"]
