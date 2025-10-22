@@ -1,0 +1,8 @@
+[project]
+name = "wrfrontiers-exporter"
+version = "1.0.0"
+
+[tool.optionsconfig]
+schema_module = "src/options_schema"
+env_example_path = ".env.example"
+readme_path = "README.md"
