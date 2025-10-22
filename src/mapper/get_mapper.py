@@ -6,7 +6,7 @@ import shutil
 from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from options import init_options, Options
+from optionsconfig import init_options, Options
 from utils import clear_dir, wait_for_process_ready_for_injection, terminate_process_by_name, terminate_process_object, is_admin
 from mapper.simple_injector import inject_dll_into_process
 from loguru import logger
@@ -274,7 +274,7 @@ def main(options: Optional[Options] = None) -> str:
     os.makedirs(parent_dir, exist_ok=True)
     
     # Copy the mapper file to the specified path and filename
-    # This will use the filename from options.output_mapper_file, not the original extracted filename
+    # This will use the filename from optionsconfig.output_mapper_file, not the original extracted filename
     shutil.copy2(mapping_file_path, options.output_mapper_file)
     logger.info(f"Mapper file copied from {mapping_file_path} to {options.output_mapper_file}")
 

@@ -20,11 +20,13 @@ import os
 import time
 from typing import Optional
 from argparse import Namespace
+from pathlib import Path
 
-# Add current directory to path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from options import init_options, ArgumentWriter, Options
+from optionsconfig import init_options, ArgumentWriter, Options
 from loguru import logger
 import traceback
 from dependency_manager import main as dependency_main

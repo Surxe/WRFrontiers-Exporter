@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from options import init_options, Options
+from optionsconfig import init_options, Options
 from utils import run_process
 from loguru import logger
 
