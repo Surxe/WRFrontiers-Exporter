@@ -262,7 +262,7 @@ def validate_environment(options: Options) -> bool:
         return False
 
 
-def main(args: Namespace) -> bool:
+def main(args: Namespace, log_file: str) -> bool:
     """
     Main function to run the complete WRFrontiers-Exporter process.
         
@@ -270,7 +270,6 @@ def main(args: Namespace) -> bool:
         bool: True if all steps completed successfully, False otherwise
     """
     overall_start_time = time.time()
-    
 
     # Initialize basic loguru logger early for startup messages
     from loguru import logger as temp_logger
@@ -281,7 +280,7 @@ def main(args: Namespace) -> bool:
         temp_logger.info("=" * 80)
         
         # Initialize options with provided arguments
-        options = init_options(args)
+        options = init_options(args=args, log_file=log_file)
         global logger
         from optionsconfig import logger
         
@@ -394,11 +393,9 @@ Quick Examples:
     argument_writer.add_arguments(parser)
     args = parser.parse_args()
     log_file = get_log_file_path(args)
-    print('Log file path:', log_file)
-    options = init_options(args=args, log_file=log_file)
 
     # Run the main process with parsed arguments
-    success = main(args)
+    success = main(args, log_file=log_file)
     
     # Exit with appropriate code
     sys.exit(0 if success else 1)
