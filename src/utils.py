@@ -9,23 +9,6 @@ from typing import Union, List, Optional, Any
 load_dotenv()
 
 ###############################
-#           Options            #
-###############################
-
-def is_truthy(string: Any) -> bool:
-    TRUE_THO = [
-        True,
-        'true',
-        'True',
-        'TRUE',
-        't',
-        'T',
-        1,
-    ]
-    return string in TRUE_THO
-
-
-###############################
 #             FILE            #
 ###############################
 
