@@ -27,7 +27,6 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from optionsconfig import init_options, ArgumentWriter, Options
-from loguru import logger
 import traceback
 from dependency_manager import main as dependency_main
 
@@ -271,14 +270,20 @@ def main(args: Namespace) -> bool:
         bool: True if all steps completed successfully, False otherwise
     """
     overall_start_time = time.time()
-    logger.debug(f"WRFrontiers-Exporter overall timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(overall_start_time))}")
+    
+
+    # Initialize basic loguru logger early for startup messages
+    from loguru import logger as temp_logger
+    temp_logger.info(f"WRFrontiers-Exporter overall timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(overall_start_time))}")
     
     try:
-        logger.info("Starting WRFrontiers-Exporter Complete Process")
-        logger.info("=" * 80)
+        temp_logger.info("Starting WRFrontiers-Exporter Complete Process")
+        temp_logger.info("=" * 80)
         
         # Initialize options with provided arguments
         options = init_options(args)
+        global logger
+        from optionsconfig import logger
         
         # Validate environment
         if not validate_environment(options):
