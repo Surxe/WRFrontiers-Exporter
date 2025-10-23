@@ -348,6 +348,26 @@ def main(args: Namespace) -> bool:
         logger.error(f"Unexpected error in main process: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False
+    
+def get_log_file_path(args: Namespace) -> Optional[str]:
+    """
+    Determine the log file path from the provided arguments.
+    
+    Args:
+        args (Namespace): Parsed command line arguments
+    Returns:
+        Path: Log file path
+    """
+    if hasattr(args, 'steam_game_download_dir') and args.steam_game_download_dir:
+        # path/to/steamdownload/2025-09-30
+        # output to cwd/logs/2025-09-30.log
+        steam_dir = Path(args.steam_game_download_dir)
+        version_date = steam_dir.name
+        log_dir = Path('logs')
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"{version_date}.log"
+        return Path(log_file)
+    return Path('logs/default.log')
 
 
 if __name__ == "__main__":
@@ -368,7 +388,10 @@ Quick Examples:
     argument_writer = ArgumentWriter()
     argument_writer.add_arguments(parser)
     args = parser.parse_args()
-    
+    log_file = get_log_file_path(args)
+    print('Log file path:', log_file)
+    options = init_options(args=args, log_file=log_file)
+
     # Run the main process with parsed arguments
     success = main(args)
     

@@ -279,7 +279,3 @@ def main(options: Optional[Options] = None) -> str:
     logger.info(f"Mapper file copied from {mapping_file_path} to {options.output_mapper_file}")
 
     return options.output_mapper_file
-
-if __name__ == '__main__':
-    options = init_options()
-    main(options)

@@ -160,10 +160,3 @@ def main(options: Optional[Options] = None, mapping_file_path: Optional[str] = N
     except Exception as e:
         logger.error(f"BatchExport failed: {e}")
         raise
-
-
-if __name__ == "__main__":
-    import sys
-    options = init_options()
-    
-    main(options, options.output_mapper_file)
