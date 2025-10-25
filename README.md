@@ -107,7 +107,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
 
 * **MANIFEST_ID** - Steam manifest ID to download. If blank, the latest manifest ID will be used.
-  - Default: `""` (empty for latest)
+  - Default: `""` (empty)
   - Command line: `--manifest-id`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
   - See [SteamDB](https://steamdb.info/app/1491000/depot/1491005/manifests/) for available values

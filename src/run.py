@@ -20,12 +20,13 @@ import os
 import time
 from typing import Optional
 from argparse import Namespace
+from pathlib import Path
 
-# Add current directory to path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from options import init_options, ArgumentWriter, Options
-from loguru import logger
+from optionsconfig import init_options, ArgumentWriter, Options
 import traceback
 from dependency_manager import main as dependency_main
 
@@ -261,7 +262,7 @@ def validate_environment(options: Options) -> bool:
         return False
 
 
-def main(args: Namespace) -> bool:
+def main(args: Namespace, log_file: str) -> bool:
     """
     Main function to run the complete WRFrontiers-Exporter process.
         
@@ -269,14 +270,19 @@ def main(args: Namespace) -> bool:
         bool: True if all steps completed successfully, False otherwise
     """
     overall_start_time = time.time()
-    logger.debug(f"WRFrontiers-Exporter overall timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(overall_start_time))}")
+
+    # Initialize basic loguru logger early for startup messages
+    from loguru import logger as temp_logger
+    temp_logger.info(f"WRFrontiers-Exporter overall timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(overall_start_time))}")
     
     try:
-        logger.info("Starting WRFrontiers-Exporter Complete Process")
-        logger.info("=" * 80)
+        temp_logger.info("Starting WRFrontiers-Exporter Complete Process")
+        temp_logger.info("=" * 80)
         
         # Initialize options with provided arguments
-        options = init_options(args)
+        options = init_options(args=args, log_file=log_file)
+        global logger
+        from optionsconfig import logger
         
         # Validate environment
         if not validate_environment(options):
@@ -346,6 +352,26 @@ def main(args: Namespace) -> bool:
         logger.error(f"Unexpected error in main process: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False
+    
+def get_log_file_path(args: Namespace) -> Optional[str]:
+    """
+    Determine the log file path from the provided arguments.
+    
+    Args:
+        args (Namespace): Parsed command line arguments
+    Returns:
+        Path: Log file path
+    """
+    if hasattr(args, 'steam_game_download_dir') and args.steam_game_download_dir:
+        # path/to/steamdownload/2025-09-30
+        # output to cwd/logs/2025-09-30.log
+        steam_dir = Path(args.steam_game_download_dir)
+        version_date = steam_dir.name
+        log_dir = Path('logs')
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"{version_date}.log"
+        return Path(log_file)
+    return Path('logs/default.log')
 
 
 if __name__ == "__main__":
@@ -366,9 +392,10 @@ Quick Examples:
     argument_writer = ArgumentWriter()
     argument_writer.add_arguments(parser)
     args = parser.parse_args()
-    
+    log_file = get_log_file_path(args)
+
     # Run the main process with parsed arguments
-    success = main(args)
+    success = main(args, log_file=log_file)
     
     # Exit with appropriate code
     sys.exit(0 if success else 1)

@@ -1,7 +1,7 @@
 import os
 import shutil
 from loguru import logger
-from options import init_options
+from optionsconfig import init_options
 from utils import run_process
 from typing import Optional
 from pathlib import Path
@@ -104,16 +104,3 @@ class DepotDownloader:
         logger.debug('Writing manifest id', manifest_id, 'to', self.manifest_path)
         with open(self.manifest_path, 'w') as f:
             f.write(manifest_id)
-
-if __name__ == '__main__':
-    options = init_options()
-
-    if options is None:
-        raise ValueError("Options must be provided")
-    
-    DepotDownloader(
-        wrf_dir=options.steam_game_download_dir,
-        steam_username=options.steam_username,
-        steam_password=options.steam_password,
-        force=options.force_steam_download,
-    ).run(manifest_id=options.manifest_id)
