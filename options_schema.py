@@ -2,16 +2,6 @@ from typing import Literal
 from pathlib import Path
 
 """
-# Schema
-* **env** - Environment variable name (UPPER_CASE)
-* **arg** - Command line argument (kebab-case with --)
-* **type** - Python type (bool, str, Path, Literal)
-* **default** - Default value. None means its required if it's root option is True
-* **help** - Description text
-* **section** - Logical grouping name
-* **section_options** - Nested sub-options
-* **sensitive** - Boolean flag for password masking
-
 # Patterns
 * **should_** - Main action flags (e.g., `should_download_steam_game`)
 * **force_** - Override/refresh flags (e.g., `force_download_dependencies`)
