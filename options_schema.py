@@ -122,7 +122,7 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to save the generated mapping file (.usmap) at. Should end in .usmap",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER"]
+        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"]
     },
     "SHOULD_BATCH_EXPORT": {
         "env": "SHOULD_BATCH_EXPORT",
