@@ -64,8 +64,8 @@ OPTIONS_SCHEMA = {
         "env": "MANIFEST_ID",
         "arg": "--manifest-id",
         "type": str,
-        "default": "",
-        "help": "Steam manifest ID to download. If blank, the latest manifest ID will be used.",
+        "default": "latest",
+        "help": "Steam manifest ID to download. If 'latest', the latest manifest ID will be used.",
         "links": {"SteamDB": "https://steamdb.info/app/1491000/depot/1491005/manifests/"},
         "section": "Steam Download",
         "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"]

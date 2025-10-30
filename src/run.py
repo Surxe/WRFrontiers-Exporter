@@ -104,7 +104,7 @@ def run_steam_download_update(options: Options) -> bool:
             steam_password=options.steam_password,
             force=options.force_steam_download,
         )
-        manifest_id = None if options.manifest_id == "" else options.manifest_id
+        manifest_id = options.manifest_id
         result = downloader.run(manifest_id=manifest_id)
 
         end_time = time.time()
