@@ -4,7 +4,7 @@
 
 ### Case
 - **snake_case** - Used for variables and functions
-- **PascalCase** - Used for class names (e.g., `DependencyManager`, `ArgumentWriter`, `Options`)
+- **PascalCase** - Used for class names (e.g., `DependencyManager`, `Options`)
 - ***CREAMING_SNAKE_CASE** - Used for schema keys and environment variables (e.g., `LOG_LEVEL`, `STEAM_USERNAME`)
 
 ### Path Variable Naming
@@ -15,7 +15,7 @@
 * **Path** - Generic - Ideally is changed to either dir, cmd, or file
 
 ### Function/Method Naming
-* **Private methods** - Methods that use (not just have) `self` arg. Prefixed with `_` (e.g., `_process_schema`, `_download_file`, `_validate_zip_file`)
+* **Private methods** - Methods that use (not just have) `self` arg. Prefixed with `_` (e.g., `_download_file`, `_validate_zip_file`)
 
 ### File Extensions & Types
 * **Configuration files** - `.json` (e.g., `appsettings.template.json`)
@@ -42,8 +42,8 @@
 * **Parameter / Environment Variable** - `.env` provided variable, i.e. `LOG_LEVEL`
 * **Default** - Default value for a given option
 * **Option** - Argument, parameter, or default (in descending order of priority)
-* **Root Option** - An option that has sub-options via `section_options` (e.g., `SHOULD_DOWNLOAD_STEAM_GAME`)
-* **Section Option** - A sub-option of the section's root option (e.g., `STEAM_USERNAME` under `SHOULD_DOWNLOAD_STEAM_GAME`)
+* **Root Option** - An option that has other options that depend on it via `depends_on` (e.g., `SHOULD_DOWNLOAD_STEAM_GAME`)
+* **Dependent Option** - A dependent-option of the section's root option (e.g., `STEAM_USERNAME` under `SHOULD_DOWNLOAD_STEAM_GAME`)
 
 ### Process Management
 * **Process** - Running executable/application instance
