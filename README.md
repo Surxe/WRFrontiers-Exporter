@@ -2,6 +2,7 @@
 
 A comprehensive data extraction pipeline for War Robots Frontiers that downloads game files, creates a mapping file, and exports game assets to JSON format.
 
+
 ## Overview
 
 WRFrontiers-Exporter orchestrates a complete 4-step process to extract and convert War Robots Frontiers game data:
@@ -10,6 +11,7 @@ WRFrontiers-Exporter orchestrates a complete 4-step process to extract and conve
 2. **Steam Download/Update** - Downloads/updates game files via DepotDownloader  
 3. **DLL Injection for Mapper** - Creates mapper file via game injection
 4. **BatchExport** - Converts game assets to JSON format
+
 
 ## Process Details
 
@@ -23,18 +25,21 @@ WRFrontiers-Exporter orchestrates a complete 4-step process to extract and conve
 - Download is saved at `STEAM_GAME_DOWNLOAD_DIR`
 - Supports downloading specific manifest versions or latest version
 - Uses Steam credentials for authentication
+- Manifest id (if downloaded latest via `MANIFEST_ID`=`latest`) is saved to `STEAM_GAME_DOWNLOAD_DIR`/manifest.txt
 
 ### 3. DLL Injection for Mapper File
 - Runs WRF's `Shipping.exe` from the downloaded game files to launch the game without being logged in to Steam
 - Injects `src\mapper\Dumper-7.dll` to it to make an SDK
 - Extracts the mapper file from the SDK generated in `DUMPER7_OUTPUT_DIR` and copies it to `OUTPUT_MAPPER_FILE`
 - May require administrator privileges for DLL injection
+- Game cannot be currently open through another source, even through a different steam account
 
 ### 4. BatchExport
 - Uses the mapper file and steam download
 - Exports all `.pak`, `.utoc`, and `.locres` source files to `.json`
 - Saves them in `OUTPUT_DATA_DIR`
 - Converts game assets to human-readable JSON format
+
 
 ## Installation
 
@@ -59,6 +64,7 @@ cp .env.example .env
 ```bash
 python src/run.py --help
 ```
+
 
 ## Options
 
@@ -106,8 +112,8 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--force-steam-download`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
 
-* **MANIFEST_ID** - Steam manifest ID to download. If blank, the latest manifest ID will be used.
-  - Default: `""` (empty)
+* **MANIFEST_ID** - Steam manifest ID to download. If 'latest', the latest manifest ID will be used.
+  - Default: `"latest"`
   - Command line: `--manifest-id`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
   - See [SteamDB](https://steamdb.info/app/1491000/depot/1491005/manifests/) for available values
@@ -146,9 +152,9 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.
 
 * **OUTPUT_MAPPER_FILE** - Path to save the generated mapping file (.usmap) at. Should end in .usmap
-  - Default: None - required when SHOULD_GET_MAPPER is True
+  - Default: None - required when SHOULD_GET_MAPPER or SHOULD_BATCH_EXPORT is True
   - Command line: `--output-mapper-file`
-  - Depends on: `SHOULD_GET_MAPPER`
+  - Depends on: `SHOULD_GET_MAPPER`, `SHOULD_BATCH_EXPORT`
 
 
 #### Batch Export
@@ -176,10 +182,8 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   * Option
   * Default
 * If all options prefixed with `SHOULD_` are defaulted to `False`, they are instead all defaulted to `True` for ease of use
-* Options are only required if their section's `SHOULD_` option is `True`
+* Options are only required if their section's root `SHOULD_` option is `True`
 
-### Batch Export Options
-For customizing Batch Export's options, namely paths to export, see `src\batch_export\BatchExport\README.md` after downloading dependencies. A custom needed exports and appsettings file can be created in the BatchExport installation directory as it is gitignored.
 
 ## Requirements
 
@@ -188,30 +192,6 @@ For customizing Batch Export's options, namely paths to export, see `src\batch_e
 - Steam account credentials
 - Windows OS (for game execution and DLL injection)
 
-## Directory Structure
-
-```
-WRFrontiers-Exporter/
-├── src/
-│   ├── run.py                       # Main orchestration script
-│   ├── utils.py                     # Shared utilities and option management
-│   ├── dependency_manager.py        # Dependency download/update management
-│   ├── steam/
-│   │   └── run_depot_downloader.py  # Steam game download
-│   │   └── DepotDownloader/         # DepotDownloader installation (after downloaded)
-│   ├── mapper/   
-│   │   ├── get_mapper.py            # DLL injection and mapper creation
-│   │   ├── simple_injector.py       # DLL injection utilities
-│   │   └── Dumper-7.dll             # UE4 SDK generation DLL
-│   └── batch_export/   
-│       └── run_batch_export.py      # Asset export to JSON
-│       └── BatchExport/             # BatchExport installation (after downloaded)
-│           └── README.md/           # BatchExport documentation
-├── logs/                            # Log files
-├── .env.example                     # Environment configuration template
-├── requirements.txt                 # Python dependencies
-└── README.md                        # This file
-```
 
 ## Troubleshooting
 
@@ -237,23 +217,12 @@ WRFrontiers-Exporter/
    - Check that output directories are writable
    - Verify antivirus isn't blocking file operations
 
-### Debug Mode
-
-Run with debug logging for detailed troubleshooting:
-```bash
-python src/run.py --log-level DEBUG
-```
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+* After making changes to `options_schema.py`, rerun `build/docs.py` to rebuild the `.env.example` and `README.md`
+* Follow standards set by `STANDARDS.md`
 
-* After making changes to `src/options_schema.py`, rerun `build_scripts/build_docs.py` to rebuild the `.env.example` and `README.md`
-* Follow standards set by `STANDARDS.md` (barebones atm)
 
 ## Disclaimer
 

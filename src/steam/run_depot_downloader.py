@@ -1,10 +1,8 @@
 import os
 import shutil
 from loguru import logger
-from optionsconfig import init_options
 from utils import run_process
 from typing import Optional
-from pathlib import Path
 
 APP_ID = '1491000'  # war robots: frontier's app_id
 DEPOT_ID = '1491005'  # the big depot
@@ -27,9 +25,9 @@ class DepotDownloader:
         self.manifest_path = os.path.join(self.wrf_dir, 'manifest.txt')
         self.force = force
 
-    def run(self, manifest_id: Optional[str | None]) -> None:
+    def run(self, manifest_id: str) -> None:
         # no input manifest id downloads the latest version
-        if manifest_id is None:
+        if manifest_id == "latest":
             manifest_id = self._get_latest_manifest_id()
             logger.debug(f"DepotDownloader retrieved latest manifest id of: {manifest_id}")
 

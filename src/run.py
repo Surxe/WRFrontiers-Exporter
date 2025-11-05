@@ -104,7 +104,7 @@ def run_steam_download_update(options: Options) -> bool:
             steam_password=options.steam_password,
             force=options.force_steam_download,
         )
-        manifest_id = None if options.manifest_id == "" else options.manifest_id
+        manifest_id = options.manifest_id
         result = downloader.run(manifest_id=manifest_id)
 
         end_time = time.time()
@@ -320,7 +320,7 @@ def main(args: Namespace, log_file: str) -> bool:
             # If skipped mapper creation, use the expected output path
             mapper_file_path = options.output_mapper_file
             if not os.path.exists(mapper_file_path):
-                logger.error(f"Mapper file not found at {mapper_file_path}. Cannot skip mapper creation.")
+                logger.error(f"Mapper file not found at {mapper_file_path}. Cannot skip mapper creation for BatchExport.")
                 return False
             if not run_batch_export(options, mapper_file_path):
                 logger.error("BatchExport failed.")

@@ -252,7 +252,7 @@ def main(options: Optional[Options] = None) -> str:
         terminate_game_process(game_process, game_process_name)
         has_terminated = True
 
-        logger.warning("DLL injection says it failed, but it could be incorrect. Checking if the mapping file was created...")
+        logger.info("DLL injection says it failed, but it could be incorrect. Checking if the mapping file was created...")
         mapping_file_path = get_mapper_from_sdk(options.dumper7_output_dir)
         if mapping_file_path is None:
             logger.error("DLL injection failed and mapping file was not created. Cannot continue.")

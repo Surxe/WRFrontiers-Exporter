@@ -2,16 +2,6 @@ from typing import Literal
 from pathlib import Path
 
 """
-# Schema
-* **env** - Environment variable name (UPPER_CASE)
-* **arg** - Command line argument (kebab-case with --)
-* **type** - Python type (bool, str, Path, Literal)
-* **default** - Default value. None means its required if it's root option is True
-* **help** - Description text
-* **section** - Logical grouping name
-* **section_options** - Nested sub-options
-* **sensitive** - Boolean flag for password masking
-
 # Patterns
 * **should_** - Main action flags (e.g., `should_download_steam_game`)
 * **force_** - Override/refresh flags (e.g., `force_download_dependencies`)
@@ -64,8 +54,8 @@ OPTIONS_SCHEMA = {
         "env": "MANIFEST_ID",
         "arg": "--manifest-id",
         "type": str,
-        "default": "",
-        "help": "Steam manifest ID to download. If blank, the latest manifest ID will be used.",
+        "default": "latest",
+        "help": "Steam manifest ID to download. If 'latest', the latest manifest ID will be used.",
         "links": {"SteamDB": "https://steamdb.info/app/1491000/depot/1491005/manifests/"},
         "section": "Steam Download",
         "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"]
@@ -132,7 +122,7 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to save the generated mapping file (.usmap) at. Should end in .usmap",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER"]
+        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"]
     },
     "SHOULD_BATCH_EXPORT": {
         "env": "SHOULD_BATCH_EXPORT",

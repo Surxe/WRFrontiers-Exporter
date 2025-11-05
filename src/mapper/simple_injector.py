@@ -188,7 +188,7 @@ class SimpleDLLInjector:
                 return True
                 
         except Exception as e:
-            logger.error(f"Exception during injection: {e}")
+            logger.info(f"Exception during injection: {e}")
             return False
         finally:
             ctypes.windll.kernel32.CloseHandle(h_process)

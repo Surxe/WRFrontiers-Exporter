@@ -10,17 +10,6 @@ from optionsconfig import init_options, Options
 from utils import run_process
 from loguru import logger
 
-"""
-Usage:
-    python batchexport.py <mapping_file_path>
-
-Example:
-    python batchexport.py /path/to/mapping/file.usmap
-
-Alternatively, you can import and use the BatchExporter class directly:
-"""
-
-
 class BatchExporter:
     """
     A class to handle batch exporting of game assets using the CUE4P BatchExport tool.
@@ -68,13 +57,13 @@ class BatchExporter:
         if not self.executable_path.exists():
             raise FileNotFoundError(
                 f"BatchExport.exe not found at {self.executable_path}. "
-                "Please run install_batch_export.sh first to download it."
+                "Please use should_download_dependencies first to download it."
             )
         
         if not os.path.exists(self.options.steam_game_download_dir):
             raise FileNotFoundError(
                 f"Steam game download path not found: {self.options.steam_game_download_dir}. "
-                "Please ensure STEAM_GAME_DOWNLOAD_DIR is set correctly in your environment."
+                "Please ensure steam_game_download_dir is set correctly in your environment."
             )
         
         # Create output data directory if it doesn't exist

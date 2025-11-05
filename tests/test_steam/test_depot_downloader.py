@@ -305,7 +305,7 @@ class TestDepotDownloader(unittest.TestCase):
                 with patch.object(depot, '_download') as mock_download:
                     with patch.object(depot, '_write_downloaded_manifest_id') as mock_write:
                         with patch.object(src_run_depot_downloader, 'logger') as mock_logger:
-                            depot.run(None)
+                            depot.run('latest')
                             
                             # Verify latest manifest was retrieved
                             mock_logger.debug.assert_called_with(f"DepotDownloader retrieved latest manifest id of: {latest_manifest_id}")
