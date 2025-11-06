@@ -89,7 +89,7 @@ OPTIONS_SCHEMA = {
         "help": "Path to the local Steam game installation directory.",
         "section": "Steam Download",
         "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"],
-        "example": "C:\\WRFrontiersDB\\SteamDownload"
+        "example": Path("C:/WRFrontiersDB/SteamDownload")
     },
     "SHOULD_GET_MAPPER": {
         "env": "SHOULD_GET_MAPPER",
@@ -117,7 +117,7 @@ OPTIONS_SCHEMA = {
         "help_extended": "If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.",
         "section": "Mapping",
         "depends_on": ["SHOULD_GET_MAPPER"],
-        "example": "C:\\Dumper-7"
+        "example": Path("C:/Dumper-7")
     },
     "OUTPUT_MAPPER_FILE": {
         "env": "OUTPUT_MAPPER_FILE",
@@ -127,7 +127,7 @@ OPTIONS_SCHEMA = {
         "help": "Path to save the generated mapping file (.usmap) at. Should end in .usmap",
         "section": "Mapping",
         "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"],
-        "example": "C:\\WRFrontiersDB\\Mappings\\2025-09-30.usmap"
+        "example": Path("C:/WRFrontiersDB/Mappings/2025-09-30.usmap")
     },
     "SHOULD_BATCH_EXPORT": {
         "env": "SHOULD_BATCH_EXPORT",
@@ -154,6 +154,6 @@ OPTIONS_SCHEMA = {
         "help": "Path to save the exported assets to.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"],
-        "example": "C:\\WRFrontiersDB\\ExportedData"
+        "example": Path("C:/WRFrontiersDB/ExportedData")
     },
 }
