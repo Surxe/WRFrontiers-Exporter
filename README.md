@@ -84,14 +84,14 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 <!-- BEGIN_GENERATED_OPTIONS -->
 #### Logging
 
-- **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+* **LOG_LEVEL** - Logging level. Must be one of: DEBUG, INFO, WARNING, ERROR, CRITICAL.
   - Default: `"DEBUG"`
   - Command line: `--log-level`
 
 
 #### Dependencies
 
-- **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
+* **SHOULD_DOWNLOAD_DEPENDENCIES** - Whether to download dependencies.
   - Default: `"false"`
   - Command line: `--should-download-dependencies`
 
@@ -103,7 +103,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 
 #### Steam Download
 
-- **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
+* **SHOULD_DOWNLOAD_STEAM_GAME** - Whether to download Steam game files.
   - Default: `"false"`
   - Command line: `--should-download-steam-game`
 
@@ -116,19 +116,22 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Default: `"latest"`
   - Command line: `--manifest-id`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
-  - See [SteamDB](https://steamdb.info/app/1491000/depot/1491005/manifests/) for available values
+  - [SteamDB](https://steamdb.info/app/1491000/depot/1491005/manifests/)
 
 * **STEAM_USERNAME** - Steam username for authentication.
+  - Example: `"example_user"`
   - Default: None - required when SHOULD_DOWNLOAD_STEAM_GAME is True
   - Command line: `--steam-username`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
 
 * **STEAM_PASSWORD** - Steam password for authentication.
+  - Example: `"example_password"`
   - Default: None - required when SHOULD_DOWNLOAD_STEAM_GAME is True
   - Command line: `--steam-password`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
 
 * **STEAM_GAME_DOWNLOAD_DIR** - Path to the local Steam game installation directory.
+  - Example: `"C:/WRFrontiersDB/SteamDownload"`
   - Default: None - required when SHOULD_DOWNLOAD_STEAM_GAME is True
   - Command line: `--steam-game-download-dir`
   - Depends on: `SHOULD_DOWNLOAD_STEAM_GAME`
@@ -136,7 +139,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 
 #### Mapping
 
-- **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
+* **SHOULD_GET_MAPPER** - Whether to get the mapping file using Dumper7.
   - Default: `"false"`
   - Command line: `--should-get-mapper`
 
@@ -146,12 +149,14 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Depends on: `SHOULD_GET_MAPPER`
 
 * **DUMPER7_OUTPUT_DIR** - Path to the where Dumper7 outputs its generated SDK.
+  - Example: `"C:/Dumper-7"`
   - Default: None - required when SHOULD_GET_MAPPER is True
   - Command line: `--dumper7-output-dir`
   - Depends on: `SHOULD_GET_MAPPER`
   - If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.
 
 * **OUTPUT_MAPPER_FILE** - Path to save the generated mapping file (.usmap) at. Should end in .usmap
+  - Example: `"C:/WRFrontiersDB/Mappings/2025-09-30.usmap"`
   - Default: None - required when SHOULD_GET_MAPPER or SHOULD_BATCH_EXPORT is True
   - Command line: `--output-mapper-file`
   - Depends on: `SHOULD_GET_MAPPER`, `SHOULD_BATCH_EXPORT`
@@ -159,7 +164,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 
 #### Batch Export
 
-- **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
+* **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
   - Default: `"false"`
   - Command line: `--should-batch-export`
 
@@ -169,6 +174,7 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Depends on: `SHOULD_BATCH_EXPORT`
 
 * **OUTPUT_DATA_DIR** - Path to save the exported assets to.
+  - Example: `"C:/WRFrontiersDB/ExportedData"`
   - Default: None - required when SHOULD_BATCH_EXPORT is True
   - Command line: `--output-data-dir`
   - Depends on: `SHOULD_BATCH_EXPORT`

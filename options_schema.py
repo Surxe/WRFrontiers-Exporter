@@ -67,7 +67,8 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Steam username for authentication.",
         "section": "Steam Download",
-        "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"]
+        "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"],
+        "example": "example_user"
     },
     "STEAM_PASSWORD": {
         "env": "STEAM_PASSWORD",
@@ -77,7 +78,8 @@ OPTIONS_SCHEMA = {
         "sensitive": True,
         "help": "Steam password for authentication.",
         "section": "Steam Download",
-        "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"]
+        "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"],
+        "example": "example_password"
     },
     "STEAM_GAME_DOWNLOAD_DIR": {
         "env": "STEAM_GAME_DOWNLOAD_DIR",
@@ -86,7 +88,8 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to the local Steam game installation directory.",
         "section": "Steam Download",
-        "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"]
+        "depends_on": ["SHOULD_DOWNLOAD_STEAM_GAME"],
+        "example": Path("C:/WRFrontiersDB/SteamDownload")
     },
     "SHOULD_GET_MAPPER": {
         "env": "SHOULD_GET_MAPPER",
@@ -113,7 +116,8 @@ OPTIONS_SCHEMA = {
         "help": "Path to the where Dumper7 outputs its generated SDK.",
         "help_extended": "If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER"]
+        "depends_on": ["SHOULD_GET_MAPPER"],
+        "example": Path("C:/Dumper-7")
     },
     "OUTPUT_MAPPER_FILE": {
         "env": "OUTPUT_MAPPER_FILE",
@@ -122,7 +126,8 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to save the generated mapping file (.usmap) at. Should end in .usmap",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"]
+        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"],
+        "example": Path("C:/WRFrontiersDB/Mappings/2025-09-30.usmap")
     },
     "SHOULD_BATCH_EXPORT": {
         "env": "SHOULD_BATCH_EXPORT",
@@ -148,6 +153,7 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to save the exported assets to.",
         "section": "Batch Export",
-        "depends_on": ["SHOULD_BATCH_EXPORT"]
+        "depends_on": ["SHOULD_BATCH_EXPORT"],
+        "example": Path("C:/WRFrontiersDB/ExportedData")
     },
 }
