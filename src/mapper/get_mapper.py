@@ -228,7 +228,7 @@ def main(options: Optional[Options] = None) -> str:
 
     # Check if running as administrator (required for DLL injection)
     if not is_admin():
-        logger.warning("Not running as administrator - DLL injection could fail. Launch IDE or script as administrator if this run fails.")
+        logger.info("Not running as administrator - DLL injection could fail. Launch IDE or script as administrator if this run fails.")
     else:
         logger.info("Running with administrator privileges")
 

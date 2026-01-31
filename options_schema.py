@@ -156,4 +156,13 @@ OPTIONS_SCHEMA = {
         "depends_on": ["SHOULD_BATCH_EXPORT"],
         "example": Path("C:/WRFrontiersDB/ExportedData")
     },
+    "SHOULD_EXPORT_TEXTURES": {
+        "env": "SHOULD_EXPORT_TEXTURES",
+        "arg": "--should-export-textures",
+        "type": bool,
+        "default": True,
+        "help": "Whether to export textures.",
+        "section": "Batch Export",
+        "depends_on": ["SHOULD_BATCH_EXPORT"]
+    }
 }

@@ -179,6 +179,11 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--output-data-dir`
   - Depends on: `SHOULD_BATCH_EXPORT`
 
+* **SHOULD_EXPORT_TEXTURES** - Whether to export textures.
+  - Default: `"true"`
+  - Command line: `--should-export-textures`
+  - Depends on: `SHOULD_BATCH_EXPORT`
+
 
 <!-- END_GENERATED_OPTIONS -->
 ### Miscellaneous Option Behavior
