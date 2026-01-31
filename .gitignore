@@ -172,6 +172,7 @@ todo.txt
 # Downloaded dependencies
 src/batch_export/BatchExport/
 oo2core_9_win64.dll
+Detex.dll
 src/steam/DepotDownloader/
 
 # Temporary files. If they accidentally persist here, there is a bug somewhere.

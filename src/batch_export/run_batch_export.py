@@ -46,7 +46,8 @@ class BatchExporter:
             "--pak-files-directory", self.options.steam_game_download_dir,
             "--export-output-path", self.options.output_data_dir,
             "--mapping-file-path", self.mapping_file_path,
-            "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false"
+            "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false",
+            "--should-export-textures", "false" if not self.options.should_export_textures else "true"
         ]
         
         # Validate paths
