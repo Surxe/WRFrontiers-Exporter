@@ -43,9 +43,9 @@ class BatchExporter:
         self.command = [
             str(self.executable_path),
             "--preset", "WarRobotsFrontiers",
-            "--pak-files-directory", self.options.steam_game_download_dir,
-            "--export-output-path", self.options.output_data_dir,
-            "--mapping-file-path", self.mapping_file_path,
+            "--pak-files-directory", str(self.options.steam_game_download_dir),
+            "--export-output-path", str(self.options.output_data_dir),
+            "--mapping-file-path", str(self.mapping_file_path),
             "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false",
             "--should-export-textures", "false" if not self.options.should_export_textures else "true"
         ]
