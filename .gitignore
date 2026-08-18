@@ -174,6 +174,7 @@ src/batch_export/BatchExport/
 oo2core_9_win64.dll
 Detex.dll
 src/steam/DepotDownloader/
+src/mapper/ue4ss/
 
 # Temporary files. If they accidentally persist here, there is a bug somewhere.
 .temp/
