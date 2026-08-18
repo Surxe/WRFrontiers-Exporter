@@ -113,10 +113,9 @@ OPTIONS_SCHEMA = {
         "arg": "--dumper7-output-dir",
         "type": Path,
         "default": None,
-        "help": "Path to the where Dumper7 outputs its generated SDK.",
+        "help": "(Windows only) Path to where Dumper7 outputs its generated SDK. Not required on Linux — the UE4SS path is used instead.",
         "help_extended": "If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER"],
         "example": Path("C:/Dumper-7")
     },
     "OUTPUT_MAPPER_FILE": {
