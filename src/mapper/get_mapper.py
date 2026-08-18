@@ -211,6 +211,12 @@ def main(options: Optional[Options] = None) -> str:
         logger.info(f"Mapper file already exists at {options.output_mapper_file} and FORCE_GET_MAPPER is False. Skipping mapper creation.")
         return options.output_mapper_file
 
+    # Linux: use UE4SS via umu-run instead of Windows DLL injection
+    import platform
+    if platform.system().lower() == 'linux':
+        from mapper.linux_mapper import main as linux_main
+        return linux_main(options)
+
     # Construct shipping executable path from steam download path
     shipping_cmd_path = os.path.join(options.steam_game_download_dir, "13_2017027/WRFrontiers/Binaries/Win64/WRFrontiers-Win64-Shipping.exe")
     

@@ -469,30 +469,74 @@ def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, for
         dm.cleanup_temp_files()
 
 
+def install_ue4ss(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
+    """
+    Install UE4SS (RE-UE4SS) dependency from the latest GitHub release.
+
+    Extracts UE4SS.dll, dwmapi.dll, UE4SS-settings.ini and Mods/ to the
+    staging directory (src/mapper/ue4ss/) so that ue4ss_deployer.deploy()
+    can copy them into the game's Win64 directory at runtime.
+
+    Linux only — on Windows the Dumper-7 DLL injection path is used instead.
+
+    Args:
+        output_path (str, optional): Path to stage files to.
+            Defaults to src/mapper/ue4ss/
+        force (bool): Force download even if same version exists
+    """
+    if output_path is None:
+        script_dir = Path(__file__).parent
+        output_path = script_dir / "mapper" / "ue4ss"
+
+    dm = DependencyManager()
+    try:
+        # "UE4SS_v" is a unique prefix that matches "UE4SS_v3.0.1.zip" (the
+        # main release) but not "zCustomGameConfigs.zip" or "zMapGenBP.zip".
+        # The code breaks on the first substring match; GitHub API returns
+        # assets in upload order, so the main release always comes first.
+        return dm.download_github_release_latest(
+            repo_owner="UE4SS-RE",
+            repo_name="RE-UE4SS",
+            asset_pattern="UE4SS_v",
+            output_path=output_path,
+            executable_name=None,  # no single executable; UE4SS.dll confirms success
+            force=force
+        )
+    finally:
+        dm.cleanup_temp_files()
+
+
 def main(force_download: bool = False) -> bool:
     """
     Main function to install all dependencies.
-    
+
     Args:
         force_download (bool): Force download even if same version exists
     """
+    import platform
+
     logger.info("Installing WRFrontiers-Exporter dependencies...")
-    
+
     try:
         # Install BatchExport
         logger.info("Installing BatchExport...")
         install_batch_export(force=force_download)
-        
+
         # Install DepotDownloader
         logger.info("Installing DepotDownloader...")
         install_depot_downloader(force=force_download)
-        
+
+        # Install UE4SS (Linux only — Windows uses Dumper-7 DLL injection)
+        if platform.system().lower() == 'linux':
+            logger.info("Installing UE4SS (Linux mapper dependency)...")
+            install_ue4ss(force=force_download)
+
         logger.success("All dependencies installed successfully!")
-        
+
     except Exception as e:
         logger.error(f"Failed to install dependencies: {e}")
         return False
-    
+
     return True
 
 

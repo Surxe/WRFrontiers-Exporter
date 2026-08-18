@@ -164,5 +164,25 @@ OPTIONS_SCHEMA = {
         "help": "Whether to export textures.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"]
+    },
+    "WINE_PREFIX": {
+        "env": "WINE_PREFIX",
+        "arg": "--wine-prefix",
+        "type": Path,
+        "default": None,
+        "help": "(Linux only) Path to the Wine prefix directory (WINEPREFIX). Required when SHOULD_GET_MAPPER is true on Linux.",
+        "section": "Mapping (Linux)",
+        "depends_on": ["SHOULD_GET_MAPPER"],
+        "example": Path("/srv/dev/wrf/prefix")
+    },
+    "PROTON_PATH": {
+        "env": "PROTON_PATH",
+        "arg": "--proton-path",
+        "type": Path,
+        "default": None,
+        "help": "(Linux only) Path to the Proton installation directory (PROTONPATH). Required when SHOULD_GET_MAPPER is true on Linux. Must be the WRF-TLS custom build.",
+        "section": "Mapping (Linux)",
+        "depends_on": ["SHOULD_GET_MAPPER"],
+        "example": Path("/srv/dev/wrf/proton/GE-Proton10-34-WRF-TLS")
     }
 }
