@@ -59,8 +59,10 @@ def _build_env(options: Options) -> dict:
     env["WINEPREFIX"] = str(options.wine_prefix)
     env["GAMEID"] = "0"
     env["PROTONPATH"] = str(options.proton_path)
-    # Suppress the GCLay/D3D12 crash path (same as routeA-launch.sh)
-    env["WINEDLLOVERRIDES"] = "GCLay.dll=d;GCLay64.dll=d"
+    # Suppress the GCLay/D3D12 crash path (same as routeA-launch.sh).
+    # dwmapi=n,b forces Wine to load our dwmapi.dll proxy (which loads UE4SS)
+    # instead of Wine's own built-in dwmapi — without this Wine ignores the file.
+    env["WINEDLLOVERRIDES"] = "GCLay.dll=d;GCLay64.dll=d;dwmapi=n,b"
     # Signal the Steam Deck hardware path so the game picks ACH 118 routing
     env["SteamDeck"] = "1"
     return env
