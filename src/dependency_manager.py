@@ -453,14 +453,16 @@ def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, for
         script_dir = Path(__file__).parent
         output_path = script_dir / "steam" / "DepotDownloader"
     
+    from utils import get_platform_key, executable_name
+
     dm = DependencyManager()
     try:
         return dm.download_github_release_latest(
             repo_owner="SteamRE",
             repo_name="DepotDownloader",
-            asset_pattern="windows-x64.zip",
+            asset_pattern=f"DepotDownloader-{get_platform_key()}.zip",
             output_path=output_path,
-            executable_name="DepotDownloader.exe",
+            executable_name=executable_name("DepotDownloader"),
             force=force
         )
     finally:

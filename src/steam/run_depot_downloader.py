@@ -1,7 +1,7 @@
 import os
 import shutil
 from loguru import logger
-from utils import run_process
+from utils import run_process, executable_name
 from typing import Optional
 
 APP_ID = '1491000'  # war robots: frontier's app_id
@@ -10,7 +10,9 @@ DEPOT_ID = '1491005'  # the big depot
 
 class DepotDownloader:
     def __init__(self, wrf_dir: str, steam_username: str, steam_password: str, force: bool) -> None:
-        self.depot_downloader_cmd_path = 'src/steam/DepotDownloader/DepotDownloader.exe'
+        self.depot_downloader_cmd_path = os.path.join(
+            'src', 'steam', 'DepotDownloader', executable_name('DepotDownloader')
+        )
         if not os.path.exists(self.depot_downloader_cmd_path):
             raise Exception('Is DepotDownloader installed? Run dependency_manager.py')
         if not steam_username or not steam_password:

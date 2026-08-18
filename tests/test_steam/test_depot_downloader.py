@@ -34,8 +34,11 @@ class TestDepotDownloader(unittest.TestCase):
         # Create the wrf_dir
         Path(self.wrf_dir).mkdir(parents=True, exist_ok=True)
         
-        # Mock DepotDownloader.exe existence
-        self.depot_exe_path = "src/steam/DepotDownloader/DepotDownloader.exe"
+        # Mock DepotDownloader executable existence (platform-aware name/separators,
+        # matching how run_depot_downloader builds the path)
+        self.depot_exe_path = src_run_depot_downloader.executable_name(
+            os.path.join("src", "steam", "DepotDownloader", "DepotDownloader")
+        )
 
     def tearDown(self):
         """Clean up after each test method."""

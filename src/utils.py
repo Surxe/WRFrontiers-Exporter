@@ -1,12 +1,51 @@
 from dotenv import load_dotenv
 
 import os
+import platform
 import subprocess
 import os
 import shutil
 from loguru import logger
 from typing import Union, List, Optional, Any
 load_dotenv()
+
+###############################
+#           PLATFORM          #
+###############################
+
+def get_platform_key() -> str:
+    """Return the release-asset platform key for the current OS/arch.
+
+    Matches the naming used by GitHub release assets (e.g. DepotDownloader's
+    "<os>-<arch>" suffix): "windows-x64", "linux-x64", "linux-arm64",
+    "macos-arm64", etc. Lets the exporter pick the right prebuilt binary
+    instead of hardcoding the Windows one.
+    """
+    system = platform.system().lower()
+    if system == 'windows':
+        os_part = 'windows'
+    elif system == 'darwin':
+        os_part = 'macos'
+    else:
+        os_part = 'linux'
+
+    machine = platform.machine().lower()
+    if machine in ('x86_64', 'amd64'):
+        arch = 'x64'
+    elif machine in ('arm64', 'aarch64'):
+        arch = 'arm64'
+    elif machine.startswith('arm'):
+        arch = 'arm'
+    else:
+        arch = 'x64'
+
+    return f"{os_part}-{arch}"
+
+
+def executable_name(base: str) -> str:
+    """Append ".exe" to an executable base name on Windows only."""
+    return f"{base}.exe" if platform.system().lower() == 'windows' else base
+
 
 ###############################
 #             FILE            #
