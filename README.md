@@ -356,7 +356,9 @@ Linux:
 - umu-launcher and the WRF-TLS custom Proton build (see [Linux setup](#linux-setup))
 - `git` + a C toolchain (`gcc`) for the Detex build (optional; only needed for
   texture decoding)
-- A graphical session with a working GPU (the mapper step opens the game briefly)
+- gamescope, for the default headless mapper launch (see [Linux setup](#linux-setup))
+- A working GPU (with `HEADLESS` the mapper runs offscreen with no window; with
+  `HEADLESS=false` it briefly opens the game on your current display)
 
 
 ## Troubleshooting
