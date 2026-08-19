@@ -99,6 +99,34 @@ _MODS_TXT = """\
 USMapAutoStart : 1
 """
 
+# Custom AOB signature for FText::FText(FString&&) in WRFrontiers-Win64-Shipping.exe.
+#
+# Background: UE4SS scans for this function at startup.  The default built-in AOB
+# does not match WRFrontiers' binary.  When the scan fails UE4SS retries until
+# SecondsToScanBeforeGivingUp elapses, then aborts — blocking all mods.
+#
+# This pattern was verified against the WRFrontiers UE5.4 Shipping binary:
+#   File offset 0x109b770 (RVA 0x109c170, preceded by 8×0xCC MSVC padding).
+#   The pattern matches exactly once in the binary.  The disassembly is a textbook
+#   MSVC x64 constructor: saves rbx/rsi/rdi, zeros esi (Flags=0), saves this to rbx
+#   and the FString&& source to rdi, allocates FTextHistory_String, sets vtable.
+#
+# If the game is updated and this stops working, re-derive it by:
+#   1. Running the mapper, looking at UE4SS.log for the new base address.
+#   2. Re-running src/mapper/ue4ss_deployer.py --find-ftext (TODO: CLI helper).
+_FTEXT_CONSTRUCTOR_LUA = """\
+-- UE4SS_Signatures/FText_Constructor.lua
+-- Custom AOB for FText::FText(FString&&) in WRFrontiers-Win64-Shipping.exe (UE 5.4).
+-- Verified: matches exactly one location; preceded by 8x0xCC MSVC padding.
+function Register()
+    return "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 40 48 8D 05 ?? ?? ?? ?? 33 F6 48 8B D9 48 89 44 24 28 48 8B FA"
+end
+
+function OnMatchFound(MatchAddress)
+    return MatchAddress
+end
+"""
+
 # Lua mod that fires GenerateMappings() shortly after game state init
 # then terminates the process so the parent Python process can detect the output.
 _AUTOSTART_LUA = """\
@@ -187,6 +215,14 @@ def deploy(win64_dir: str | Path) -> None:
     lua_path = autostart_scripts / "main.lua"
     lua_path.write_text(_AUTOSTART_LUA)
     logger.debug(f"Wrote autostart mod: {lua_path}")
+
+    # Deploy FText_Constructor AOB override so UE4SS can find the function
+    # (WRFrontiers' binary doesn't match the built-in default pattern)
+    sigs_dir = win64_dir / "UE4SS_Signatures"
+    sigs_dir.mkdir(exist_ok=True)
+    ftext_lua = sigs_dir / "FText_Constructor.lua"
+    ftext_lua.write_text(_FTEXT_CONSTRUCTOR_LUA)
+    logger.debug(f"Wrote FText_Constructor signature: {ftext_lua}")
 
     logger.info("UE4SS deployment complete.")
 
