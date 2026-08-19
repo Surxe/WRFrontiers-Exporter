@@ -155,10 +155,10 @@ class DependencyManager:
                 zip_path.unlink()
             raise
     
-    def download_github_release_latest(self, repo_owner: str, repo_name: str, asset_pattern: Union[str, List[str]], output_path: Union[str, Path], executable_name: Optional[str] = None, force: bool = False) -> bool:
+    def download_github_release_latest(self, repo_owner: str, repo_name: str, asset_pattern: Union[str, List[str]], output_path: Union[str, Path], executable_name: Optional[str] = None, force: bool = False, release_tag: Optional[str] = None) -> bool:
         """
         Download the latest release from a GitHub repository.
-        
+
         Args:
             repo_owner (str): GitHub repository owner
             repo_name (str): GitHub repository name
@@ -166,16 +166,21 @@ class DependencyManager:
             output_path (str or Path): Directory to extract to
             executable_name (str, optional): Name of main executable to verify
             force (bool): Force download even if same version exists
-            
+            release_tag (str, optional): Specific release tag to target (e.g., "experimental-latest").
+                If None, uses /releases/latest which skips pre-releases.
+
         Returns:
             bool: True if successful, False otherwise
         """
         try:
             output_path = Path(output_path)
-            
-            # Get latest release info
-            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
-            logger.info(f"Fetching latest release info from: {api_url}")
+
+            # Get release info — either a specific tag or the latest stable release
+            if release_tag:
+                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/tags/{release_tag}"
+            else:
+                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
+            logger.info(f"Fetching release info from: {api_url}")
             
             release_info = self._get_json_from_url(api_url)
             version = release_info.get('tag_name', 'unknown')
@@ -471,39 +476,75 @@ def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, for
 
 def install_ue4ss(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
     """
-    Install UE4SS (RE-UE4SS) dependency from the latest GitHub release.
+    Install UE4SS (RE-UE4SS) dependency from the experimental-latest GitHub release.
 
-    Extracts UE4SS.dll, dwmapi.dll, UE4SS-settings.ini and Mods/ to the
-    staging directory (src/mapper/ue4ss/) so that ue4ss_deployer.deploy()
-    can copy them into the game's Win64 directory at runtime.
+    The experimental build supports UE5.4 while the stable v3.0.1 only goes up to
+    UE5.3 (WRFrontiers is UE5.4).
+
+    Zip layout note: the experimental zip packages everything under a "ue4ss/"
+    subdirectory, so we extract to the *parent* of the staging dir (src/mapper/).
+    This ensures UE4SS.dll lands at src/mapper/ue4ss/UE4SS.dll.
+
+    The experimental zip no longer ships dwmapi.dll (the proxy loader).  We
+    download it separately from the stable v3.0.1 release which ships a compatible
+    proxy — the proxy only calls LoadLibrary("UE4SS.dll") so version mismatches
+    don't matter.
 
     Linux only — on Windows the Dumper-7 DLL injection path is used instead.
 
     Args:
-        output_path (str, optional): Path to stage files to.
-            Defaults to src/mapper/ue4ss/
+        output_path (str, optional): Staging directory. Defaults to src/mapper/ue4ss/
         force (bool): Force download even if same version exists
     """
     if output_path is None:
         script_dir = Path(__file__).parent
         output_path = script_dir / "mapper" / "ue4ss"
 
+    output_path = Path(output_path)
+    # Extract to the PARENT so the zip's "ue4ss/" prefix places files correctly
+    extract_parent = output_path.parent
+
     dm = DependencyManager()
     try:
-        # "UE4SS_v" is a unique prefix that matches "UE4SS_v3.0.1.zip" (the
-        # main release) but not "zCustomGameConfigs.zip" or "zMapGenBP.zip".
-        # The code breaks on the first substring match; GitHub API returns
-        # assets in upload order, so the main release always comes first.
-        return dm.download_github_release_latest(
+        result = dm.download_github_release_latest(
             repo_owner="UE4SS-RE",
             repo_name="RE-UE4SS",
             asset_pattern="UE4SS_v",
-            output_path=output_path,
-            executable_name=None,  # no single executable; UE4SS.dll confirms success
-            force=force
+            output_path=extract_parent,
+            executable_name=None,
+            force=force,
+            release_tag="experimental-latest",
         )
     finally:
         dm.cleanup_temp_files()
+
+    if not result:
+        return False
+
+    # Fetch dwmapi.dll from the stable v3.0.1 release if it's missing.
+    # The proxy is only 58 KB and is stable — it just calls LoadLibrary("UE4SS.dll").
+    proxy_dst = output_path / "dwmapi.dll"
+    if not proxy_dst.exists() or force:
+        logger.info("Fetching dwmapi.dll proxy from UE4SS v3.0.1...")
+        dm2 = DependencyManager()
+        try:
+            # Download v3.0.1 zip to a temp location and extract only dwmapi.dll
+            v301_url = "https://github.com/UE4SS-RE/RE-UE4SS/releases/download/v3.0.1/UE4SS_v3.0.1.zip"
+            proxy_temp_dir = dm2.temp_dir / "ue4ss_proxy"
+            proxy_temp_dir.mkdir(exist_ok=True)
+            dm2.download_and_extract(v301_url, proxy_temp_dir, version="v3.0.1-proxy")
+            proxy_src = proxy_temp_dir / "dwmapi.dll"
+            if proxy_src.exists():
+                import shutil as _shutil
+                _shutil.copy2(proxy_src, proxy_dst)
+                logger.info(f"dwmapi.dll proxy installed to {proxy_dst}")
+            else:
+                logger.error("dwmapi.dll not found in v3.0.1 zip — deploy() will fail")
+                return False
+        finally:
+            dm2.cleanup_temp_files()
+
+    return True
 
 
 def main(force_download: bool = False) -> bool:
