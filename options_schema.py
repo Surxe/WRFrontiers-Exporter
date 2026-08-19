@@ -113,10 +113,9 @@ OPTIONS_SCHEMA = {
         "arg": "--dumper7-output-dir",
         "type": Path,
         "default": None,
-        "help": "Path to the where Dumper7 outputs its generated SDK.",
+        "help": "(Windows only) Path to where Dumper7 outputs its generated SDK. Not required on Linux — the UE4SS path is used instead.",
         "help_extended": "If unsure where this is, it is likely `C:/Dumper-7`. Confirm by running the mapper, letting it fail, and checking for the dir.",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER"],
         "example": Path("C:/Dumper-7")
     },
     "OUTPUT_MAPPER_FILE": {
@@ -164,5 +163,23 @@ OPTIONS_SCHEMA = {
         "help": "Whether to export textures.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"]
+    },
+    "WINE_PREFIX": {
+        "env": "WINE_PREFIX",
+        "arg": "--wine-prefix",
+        "type": Path,
+        "default": None,
+        "help": "(Linux only) Path to the Wine prefix directory (WINEPREFIX). Required for the mapper step on Linux; unused on Windows. Validated at runtime rather than via depends_on so it is not required on Windows.",
+        "section": "Mapping (Linux)",
+        "example": Path("/srv/dev/wrf/prefix")
+    },
+    "PROTON_PATH": {
+        "env": "PROTON_PATH",
+        "arg": "--proton-path",
+        "type": Path,
+        "default": None,
+        "help": "(Linux only) Path to the Proton installation directory (PROTONPATH). Must be the WRF-TLS custom build. Required for the mapper step on Linux; unused on Windows. Validated at runtime rather than via depends_on so it is not required on Windows.",
+        "section": "Mapping (Linux)",
+        "example": Path("/srv/dev/wrf/proton/GE-Proton10-34-WRF-TLS")
     }
 }

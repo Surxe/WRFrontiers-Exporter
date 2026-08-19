@@ -1,0 +1,255 @@
+"""
+Deploy UE4SS into the game's Win64 directory so it loads automatically
+via the dwmapi.dll proxy when Wine starts Shipping.exe.
+
+This module:
+  - Copies UE4SS.dll + dwmapi.dll from the staged src/mapper/ue4ss/ dir
+    into <win64_dir>/
+  - Writes a minimal UE4SS-settings.ini (no GUI, no hot-reload, no cache,
+    so the dump fires cleanly before any anti-cheat has time to object)
+  - Creates Mods/USMapAutoStart/Scripts/main.lua — a tiny Lua mod that
+    calls GenerateMappings() after engine init then exits the process
+  - Patches Mods/mods.txt to enable only USMapAutoStart (everything else
+    disabled to avoid side effects)
+
+All operations are idempotent: re-deploying over an existing install is safe.
+"""
+from __future__ import annotations  # allow "str | Path" annotations on Python < 3.10
+import os
+import shutil
+from pathlib import Path
+from loguru import logger
+
+# Staging root populated by dependency_manager.install_ue4ss().
+# install_ue4ss extracts to the *parent* of this dir so that the zip's
+# internal "ue4ss/" prefix lands here correctly.
+_STAGED_DIR = Path(__file__).parent / "ue4ss"
+
+# The proxy DLL (dwmapi.dll) is shipped separately from the main zip — it comes
+# from the v3.0.1 "legacy_proxy" sub-download.  UE4SS.dll is the main payload.
+# Both must exist before deploy() is called.
+_REQUIRED_STAGED = ["UE4SS.dll", "dwmapi.dll"]
+
+# UE4SS's generate_usmap() writes the .usmap directly into its working
+# directory (the game's Win64 folder), named "{game}-{engine}-{sha}.usmap".
+# It does NOT use a Mappings/ subdirectory.
+
+# UE4SS-settings.ini written on deployment — headless-friendly, no GUI
+_SETTINGS_INI = """\
+[Overrides]
+ModsFolderPath =
+
+[General]
+EnableHotReloadSystem = 0
+UseCache = 0
+InvalidateCacheIfDLLDiffers = 0
+SecondsToScanBeforeGivingUp = 60
+bUseUObjectArrayCache = true
+
+[EngineVersionOverride]
+MajorVersion =
+MinorVersion =
+
+[ObjectDumper]
+LoadAllAssetsBeforeDumpingObjects = 0
+
+[CXXHeaderGenerator]
+DumpOffsetsAndSizes = 1
+KeepMemoryLayout = 0
+LoadAllAssetsBeforeGeneratingCXXHeaders = 0
+
+[UHTHeaderGenerator]
+IgnoreAllCoreEngineModules = 0
+IgnoreEngineAndCoreUObject = 1
+MakeAllFunctionsBlueprintCallable = 1
+MakeAllPropertyBlueprintsReadWrite = 1
+MakeEnumClassesBlueprintType = 1
+MakeAllConfigsEngineConfig = 1
+
+[Debug]
+; No external or GUI console — we collect output from the process stdout/log only
+ConsoleEnabled = 0
+GuiConsoleEnabled = 0
+GuiConsoleVisible = 0
+GraphicsAPI = opengl
+
+[Threads]
+SigScannerNumThreads = 8
+SigScannerMultithreadingModuleSizeThreshold = 16777216
+
+[Memory]
+MaxMemoryUsageDuringAssetLoading = 80
+
+[Hooks]
+HookProcessInternal = 1
+HookProcessLocalScriptFunction = 1
+HookInitGameState = 1
+HookCallFunctionByNameWithArguments = 1
+HookBeginPlay = 1
+HookLocalPlayerExec = 1
+FExecVTableOffsetInLocalPlayer = 0x28
+
+[CrashDump]
+EnableDumping = 0
+FullMemoryDump = 0
+
+[ExperimentalFeatures]
+GUIUFunctionCaller = 0
+"""
+
+# mods.json (experimental UE4SS build, which switched from mods.txt to JSON)
+# Only USMapAutoStart is enabled; everything else is disabled to avoid
+# unexpected side effects during the headless dump run.
+_MODS_JSON = """\
+[
+    {
+        "mod_name": "USMapAutoStart",
+        "mod_enabled": true
+    }
+]
+"""
+
+# mods.txt kept for compatibility with any older UE4SS build that still reads it
+_MODS_TXT = "USMapAutoStart : 1\n"
+
+# Custom AOB signature for FText::FText(FString&&) in WRFrontiers-Win64-Shipping.exe.
+#
+# Background: UE4SS scans for this function at startup.  The default built-in AOB
+# does not match WRFrontiers' binary.  When the scan fails UE4SS retries until
+# SecondsToScanBeforeGivingUp elapses, then aborts — blocking all mods.
+#
+# This pattern was verified against the WRFrontiers UE5.4 Shipping binary:
+#   File offset 0x109b770 (RVA 0x109c170, preceded by 8×0xCC MSVC padding).
+#   The pattern matches exactly once in the binary.  The disassembly is a textbook
+#   MSVC x64 constructor: saves rbx/rsi/rdi, zeros esi (Flags=0), saves this to rbx
+#   and the FString&& source to rdi, allocates FTextHistory_String, sets vtable.
+#
+# If the game is updated and this stops working, re-derive it by:
+#   1. Running the mapper, looking at UE4SS.log for the new base address.
+#   2. Re-running src/mapper/ue4ss_deployer.py --find-ftext (TODO: CLI helper).
+_FTEXT_CONSTRUCTOR_LUA = """\
+-- UE4SS_Signatures/FText_Constructor.lua
+-- Custom AOB for FText::FText(FString&&) in WRFrontiers-Win64-Shipping.exe (UE 5.4).
+-- Verified: matches exactly one location; preceded by 8x0xCC MSVC padding.
+function Register()
+    return "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 40 48 8D 05 ?? ?? ?? ?? 33 F6 48 8B D9 48 89 44 24 28 48 8B FA"
+end
+
+function OnMatchFound(MatchAddress)
+    return MatchAddress
+end
+"""
+
+# Lua mod that fires GenerateMappings() shortly after game state init
+# then terminates the process so the parent Python process can detect the output.
+_AUTOSTART_LUA = """\
+-- USMapAutoStart/Scripts/main.lua
+-- Auto-generated by WRFrontiers-Exporter.
+-- Waits for the game state to initialise (GObjects + GNames populated),
+-- generates the USMAP file, then exits so the exporter can collect it.
+
+local fired = false
+
+RegisterInitGameStatePostHook(function()
+    if fired then return end
+    fired = true
+
+    -- Give the reflection system a moment to finish populating after the
+    -- game-state hook fires.  2 s is conservative; the dump itself is fast.
+    ExecuteWithDelay(2000, function()
+        print("[USMapAutoStart] Triggering USMAP dump...")
+        -- DumpUSMAP() is UE4SS's built-in USMAP generator (registered in
+        -- LuaMod.cpp -> OutTheShade::generate_usmap()).  It writes the
+        -- .usmap into the Mappings/ subdir of the game's Win64 folder.
+        DumpUSMAP()
+        print("[USMapAutoStart] DumpUSMAP() returned. Exiting process.")
+        -- Exit cleanly so umu-run terminates and the Python poller can detect
+        -- the output file and move on.
+        os.exit(0)
+    end)
+end)
+"""
+
+
+def _staged_file(name: str) -> Path:
+    return _STAGED_DIR / name
+
+
+def is_staged() -> bool:
+    """Return True if the staged UE4SS dir contains the required DLLs."""
+    return all(_staged_file(n).exists() for n in _REQUIRED_STAGED)
+
+
+def deploy(win64_dir: str | Path) -> None:
+    """
+    Deploy UE4SS into ``win64_dir`` (the game's Binaries/Win64 folder).
+
+    Args:
+        win64_dir: Absolute path to the game's Win64 directory, e.g.
+            /srv/dev/wrf/data/steam-download/13_2017027/WRFrontiers/Binaries/Win64
+
+    Raises:
+        RuntimeError: If the staged UE4SS files are missing (run install_ue4ss first).
+        FileNotFoundError: If win64_dir does not exist.
+    """
+    win64_dir = Path(win64_dir)
+    if not win64_dir.is_dir():
+        raise FileNotFoundError(f"Win64 dir not found: {win64_dir}")
+
+    if not is_staged():
+        raise RuntimeError(
+            f"UE4SS not staged at {_STAGED_DIR}. "
+            "Run: python src/dependency_manager.py --install-ue4ss"
+        )
+
+    logger.info(f"Deploying UE4SS to: {win64_dir}")
+
+    # Copy DLLs
+    for dll_name in _REQUIRED_STAGED:
+        src = _staged_file(dll_name)
+        dst = win64_dir / dll_name
+        shutil.copy2(src, dst)
+        logger.debug(f"Copied {dll_name} -> {dst}")
+
+    # Write settings
+    settings_path = win64_dir / "UE4SS-settings.ini"
+    settings_path.write_text(_SETTINGS_INI)
+    logger.debug(f"Wrote settings: {settings_path}")
+
+    # Create mods directory structure
+    mods_dir = win64_dir / "Mods"
+    mods_dir.mkdir(exist_ok=True)
+
+    # Write both mods.json (experimental build) and mods.txt (legacy compat)
+    mods_json_path = mods_dir / "mods.json"
+    mods_json_path.write_text(_MODS_JSON)
+    logger.debug(f"Wrote mods.json: {mods_json_path}")
+    mods_txt_path = mods_dir / "mods.txt"
+    mods_txt_path.write_text(_MODS_TXT)
+    logger.debug(f"Wrote mods.txt: {mods_txt_path}")
+
+    # Create USMapAutoStart Lua mod
+    autostart_scripts = mods_dir / "USMapAutoStart" / "Scripts"
+    autostart_scripts.mkdir(parents=True, exist_ok=True)
+    lua_path = autostart_scripts / "main.lua"
+    lua_path.write_text(_AUTOSTART_LUA)
+    logger.debug(f"Wrote autostart mod: {lua_path}")
+
+    # Deploy FText_Constructor AOB override so UE4SS can find the function
+    # (WRFrontiers' binary doesn't match the built-in default pattern)
+    sigs_dir = win64_dir / "UE4SS_Signatures"
+    sigs_dir.mkdir(exist_ok=True)
+    ftext_lua = sigs_dir / "FText_Constructor.lua"
+    ftext_lua.write_text(_FTEXT_CONSTRUCTOR_LUA)
+    logger.debug(f"Wrote FText_Constructor signature: {ftext_lua}")
+
+    logger.info("UE4SS deployment complete.")
+
+
+def get_mappings_dir(win64_dir: str | Path) -> Path:
+    """Return the directory where UE4SS writes the .usmap file.
+
+    generate_usmap() writes to its working directory, which is the game's
+    Win64 folder itself (not a subdirectory).
+    """
+    return Path(win64_dir)

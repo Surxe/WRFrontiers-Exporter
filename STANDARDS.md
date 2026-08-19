@@ -55,7 +55,10 @@
 ### Dependencies & Tools
 * **DepotDownloader** - Steam content downloading tool
 * **BatchExport** - Game asset export utility (batch_export)
-* **Dumper-7** - Unreal Engine SDK generation DLL
+* **Dumper-7** - Unreal Engine SDK generation DLL (Windows mapper path)
+* **UE4SS** - Unreal Engine scripting system used for the Linux mapper path; loaded via a `dwmapi.dll` proxy, generates the `.usmap` via its built-in `DumpUSMAP()`
+* **umu-launcher** - `umu-run`, launches the Windows game under Proton on Linux (Linux mapper path)
+* **Oodle / Detex** - native decompression libraries CUE4Parse/BatchExport needs; provided as Linux `.so` builds on Linux
 * **Mapper / Mapping File** - Unreal Engine object mapping file (.usmap)
 
 ### Logging Standards

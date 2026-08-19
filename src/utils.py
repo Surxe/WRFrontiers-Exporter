@@ -1,12 +1,51 @@
 from dotenv import load_dotenv
 
 import os
+import platform
 import subprocess
 import os
 import shutil
 from loguru import logger
 from typing import Union, List, Optional, Any
 load_dotenv()
+
+###############################
+#           PLATFORM          #
+###############################
+
+def get_platform_key() -> str:
+    """Return the release-asset platform key for the current OS/arch.
+
+    Matches the naming used by GitHub release assets (e.g. DepotDownloader's
+    "<os>-<arch>" suffix): "windows-x64", "linux-x64", "linux-arm64",
+    "macos-arm64", etc. Lets the exporter pick the right prebuilt binary
+    instead of hardcoding the Windows one.
+    """
+    system = platform.system().lower()
+    if system == 'windows':
+        os_part = 'windows'
+    elif system == 'darwin':
+        os_part = 'macos'
+    else:
+        os_part = 'linux'
+
+    machine = platform.machine().lower()
+    if machine in ('x86_64', 'amd64'):
+        arch = 'x64'
+    elif machine in ('arm64', 'aarch64'):
+        arch = 'arm64'
+    elif machine.startswith('arm'):
+        arch = 'arm'
+    else:
+        arch = 'x64'
+
+    return f"{os_part}-{arch}"
+
+
+def executable_name(base: str) -> str:
+    """Append ".exe" to an executable base name on Windows only."""
+    return f"{base}.exe" if platform.system().lower() == 'windows' else base
+
 
 ###############################
 #             FILE            #
@@ -37,7 +76,7 @@ def normalize_path(path: str) -> str:
 #           Process           #
 ###############################
 
-def run_process(options: Union[List[str], str], name: str = '', timeout: int = 60*60, background: bool = False) -> Optional[subprocess.Popen]: #times out after 1hr
+def run_process(options: Union[List[str], str], name: str = '', timeout: int = 60*60, background: bool = False, env: Optional[dict] = None) -> Optional[subprocess.Popen]: #times out after 1hr
     """Runs a subprocess with the given options and logs its output line by line
 
     Args:
@@ -45,14 +84,15 @@ def run_process(options: Union[List[str], str], name: str = '', timeout: int = 6
         name (str, optional): An optional name to identify the process in logs. Defaults to ''
         timeout (int, optional): Maximum time to wait for process completion in seconds. Defaults to 3600 (1 hour)
         background (bool, optional): If True, starts the process in background and returns the process object. Defaults to False.
-    
+        env (dict, optional): Environment variables for the subprocess. If None, inherits the current environment.
+
     Returns:
         subprocess.Popen: If background=True, returns the process object for later management
         None: If background=False (default), waits for completion and returns None
     """
     import select
     import time
-    
+
     process = None
     try:
         # Handle shell scripts on Windows by explicitly using bash
@@ -62,7 +102,7 @@ def run_process(options: Union[List[str], str], name: str = '', timeout: int = 6
             options = ['bash'] + options
 
         process = subprocess.Popen(  # noqa: F821
-            options, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            options, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env
         )
 
         # If background mode, return the process object immediately

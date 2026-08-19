@@ -2,12 +2,13 @@
 import sys
 import os
 import time
+import platform
 from pathlib import Path
 from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from optionsconfig import init_options, Options
-from utils import run_process
+from utils import run_process, executable_name
 from loguru import logger
 
 class BatchExporter:
@@ -35,9 +36,9 @@ class BatchExporter:
         self.options = options
         self.mapping_file_path = mapping_file_path
         
-        # Path to BatchExport executable
+        # Path to BatchExport executable (platform-aware: .exe on Windows, bare on Linux)
         self.batch_export_dir = Path(__file__).parent / "BatchExport"
-        self.executable_path = self.batch_export_dir / "BatchExport.exe"
+        self.executable_path = self.batch_export_dir / executable_name("BatchExport")
         
         # Build the command once during initialization
         self.command = [
@@ -96,12 +97,25 @@ class BatchExporter:
         logger.info(f"Export output path: {self.options.output_data_dir}")
         
         try:
+            # On Linux the native decompression libs (Oodle, Detex) live next to
+            # the BatchExport binary and are loaded by bare name via dlopen, which
+            # only searches LD_LIBRARY_PATH + system dirs (not the app dir). Add
+            # the binary's directory to LD_LIBRARY_PATH so they resolve.
+            proc_env = None
+            if platform.system().lower() == 'linux':
+                proc_env = os.environ.copy()
+                existing = proc_env.get('LD_LIBRARY_PATH', '')
+                proc_env['LD_LIBRARY_PATH'] = (
+                    f"{self.batch_export_dir}:{existing}" if existing else str(self.batch_export_dir)
+                )
+
             # Execute BatchExport using run_process from utils
             # run_process handles logging, timeouts, and error handling internally
             run_process(
                 options=self.command,
                 name="BatchExport",
-                timeout=3600  # 1 hour timeout
+                timeout=3600,  # 1 hour timeout
+                env=proc_env
             )
             
             logger.success("BatchExport completed successfully!")

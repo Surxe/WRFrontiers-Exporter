@@ -147,12 +147,12 @@ class TestClearDir(unittest.TestCase):
             pass
 
     def test_clear_nonexistent_directory(self):
-        """Test clear_dir behavior with non-existent directory."""
+        """Test clear_dir is a no-op for a non-existent directory."""
         non_existent = os.path.join(self.test_dir, "nonexistent")
-        
-        # Should raise an appropriate exception
-        with self.assertRaises((FileNotFoundError, OSError)):
-            clear_dir(non_existent)
+
+        # clear_dir returns early (no error) when the directory doesn't exist
+        clear_dir(non_existent)
+        self.assertFalse(os.path.exists(non_existent))
 
     def test_clear_directory_with_hidden_files(self):
         """Test clear_dir removes hidden files (files starting with dot)."""
@@ -176,12 +176,15 @@ class TestClearDir(unittest.TestCase):
         self.assertTrue(os.path.exists(self.test_dir))
         self.assertEqual(len(os.listdir(self.test_dir)), 0)
 
+    @patch('os.path.exists')
     @patch('os.listdir')
     @patch('os.path.isdir')
     @patch('shutil.rmtree')
     @patch('os.remove')
-    def test_clear_dir_mocked_operations(self, mock_remove, mock_rmtree, mock_isdir, mock_listdir):
+    def test_clear_dir_mocked_operations(self, mock_remove, mock_rmtree, mock_isdir, mock_listdir, mock_exists):
         """Test clear_dir with mocked file system operations."""
+        # Directory exists so clear_dir proceeds to list/remove its contents
+        mock_exists.return_value = True
         # Mock directory contents
         mock_listdir.return_value = ['file.txt', 'subdir', '.hidden']
         

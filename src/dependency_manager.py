@@ -3,7 +3,9 @@ import sys
 import os
 import time
 import zipfile
+import tarfile
 import shutil
+import subprocess
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
@@ -114,14 +116,16 @@ class DependencyManager:
             logger.info(f"Output directory: {output_path}")
             
             self._download_file(download_url, zip_path)
-            
-            # Validate the downloaded file
-            if not self._validate_zip_file(zip_path):
-                raise Exception("Downloaded file is not a valid ZIP archive")
-            
-            # Extract the file
+
+            # Extract the file (dispatch on archive type: .zip or .tar.gz/.tgz)
             logger.info("Extracting files...")
-            self._extract_zip(zip_path, output_path)
+            lower_name = zip_path.name.lower()
+            if lower_name.endswith('.tar.gz') or lower_name.endswith('.tgz'):
+                self._extract_tar(zip_path, output_path)
+            else:
+                if not self._validate_zip_file(zip_path):
+                    raise Exception("Downloaded file is not a valid ZIP archive")
+                self._extract_zip(zip_path, output_path)
             
             # Verify extraction
             if executable_name:
@@ -155,10 +159,10 @@ class DependencyManager:
                 zip_path.unlink()
             raise
     
-    def download_github_release_latest(self, repo_owner: str, repo_name: str, asset_pattern: Union[str, List[str]], output_path: Union[str, Path], executable_name: Optional[str] = None, force: bool = False) -> bool:
+    def download_github_release_latest(self, repo_owner: str, repo_name: str, asset_pattern: Union[str, List[str]], output_path: Union[str, Path], executable_name: Optional[str] = None, force: bool = False, release_tag: Optional[str] = None) -> bool:
         """
         Download the latest release from a GitHub repository.
-        
+
         Args:
             repo_owner (str): GitHub repository owner
             repo_name (str): GitHub repository name
@@ -166,16 +170,21 @@ class DependencyManager:
             output_path (str or Path): Directory to extract to
             executable_name (str, optional): Name of main executable to verify
             force (bool): Force download even if same version exists
-            
+            release_tag (str, optional): Specific release tag to target (e.g., "experimental-latest").
+                If None, uses /releases/latest which skips pre-releases.
+
         Returns:
             bool: True if successful, False otherwise
         """
         try:
             output_path = Path(output_path)
-            
-            # Get latest release info
-            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
-            logger.info(f"Fetching latest release info from: {api_url}")
+
+            # Get release info — either a specific tag or the latest stable release
+            if release_tag:
+                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/tags/{release_tag}"
+            else:
+                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
+            logger.info(f"Fetching release info from: {api_url}")
             
             release_info = self._get_json_from_url(api_url)
             version = release_info.get('tag_name', 'unknown')
@@ -220,11 +229,12 @@ class DependencyManager:
                 logger.info(f"Processing asset: {asset['name']}")
                 
                 try:
-                    # For non-ZIP files (like README.md), just download them directly
-                    if not asset['name'].lower().endswith('.zip'):
+                    # Extract recognized archives; download everything else (README.md) as-is
+                    name_lower = asset['name'].lower()
+                    is_archive = name_lower.endswith('.zip') or name_lower.endswith('.tar.gz') or name_lower.endswith('.tgz')
+                    if not is_archive:
                         self._download_single_file(download_url, output_path / asset['name'])
                     else:
-                        # For ZIP files, use the existing extraction logic
                         result = self.download_and_extract(download_url, output_path, executable_name, version=version)
                         if not result:
                             success = False
@@ -359,6 +369,32 @@ class DependencyManager:
         except Exception as e:
             raise Exception(f"Failed to extract ZIP file: {e}")
     
+    def _extract_tar(self, tar_path: Path, output_path: Path) -> None:
+        """Extract a .tar.gz/.tgz archive to output directory, preserving perms."""
+        try:
+            with tarfile.open(tar_path, 'r:gz') as tf:
+                members = tf.getnames()
+                logger.debug("Archive contents:")
+                for name in members[:10]:
+                    logger.debug(f"  {name}")
+                if len(members) > 10:
+                    logger.debug(f"  ... and {len(members) - 10} more files")
+
+                # 'data' filter (Python 3.12+) blocks unsafe absolute/parent paths.
+                # Fall back to a plain extractall on older interpreters.
+                try:
+                    tf.extractall(output_path, filter='data')
+                except TypeError:
+                    tf.extractall(output_path)
+
+                # Flatten structure if everything is in a single subdirectory
+                self._flatten_extraction(output_path)
+
+                logger.info(f"Extracted {len(members)} files to {output_path}")
+
+        except Exception as e:
+            raise Exception(f"Failed to extract tar.gz file: {e}")
+
     def _flatten_extraction(self, output_path: Path) -> None:
         """
         If extraction created a single subdirectory containing all files,
@@ -426,19 +462,139 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
     if output_path is None:
         script_dir = Path(__file__).parent
         output_path = script_dir / "batch_export" / "BatchExport"
-    
+
+    from utils import get_platform_key, executable_name
+
+    # Platform-aware asset: linux ships a .tar.gz, windows a .zip
+    plat = get_platform_key()  # e.g. "linux-x64", "windows-x64"
+    archive_ext = "zip" if plat.startswith("windows") else "tar.gz"
+
     dm = DependencyManager()
     try:
-        return dm.download_github_release_latest(
+        result = dm.download_github_release_latest(
             repo_owner="Surxe",
-            repo_name="CUE4P-BatchExport", 
-            asset_pattern=["BatchExport-windows-x64.zip", "README.md"],
+            repo_name="CUE4P-BatchExport",
+            asset_pattern=[f"BatchExport-{plat}.{archive_ext}", "README.md"],
             output_path=output_path,
-            executable_name="BatchExport.exe",
+            executable_name=executable_name("BatchExport"),
             force=force
         )
     finally:
         dm.cleanup_temp_files()
+
+    if not result:
+        return False
+
+    # On Linux, CUE4Parse's bundled Oodle/Detex native libs are Windows-only.
+    # Provide Linux equivalents next to the binary so pak/texture decompression works.
+    if plat.startswith("linux"):
+        result = install_batch_export_native_libs(Path(output_path), force=force) and result
+
+    return result
+
+
+# OodleUE release providing the Linux Oodle shared object (mirrors CUE4Parse's
+# own source: FabianFG/CUE4Parse OodleHelper.cs RELEASE_URL + LINUX_ZIP).
+_OODLE_RELEASE = "2026-06-04-1357"
+_OODLE_LINUX_ZIP_URL = f"https://github.com/WorkingRobot/OodleUE/releases/download/{_OODLE_RELEASE}/gcc-x64-release.zip"
+_DETEX_REPO = "https://github.com/hglm/detex.git"
+
+
+def install_batch_export_native_libs(be_dir: Path, force: bool = False) -> bool:
+    """
+    Install the Linux native decompression libraries next to the BatchExport binary.
+
+    CUE4Parse loads Oodle and Detex by bare filename via dlopen, so both must sit
+    on LD_LIBRARY_PATH (run_batch_export adds be_dir). The tool loads them under
+    their Windows names ('oodle-data-shared.dll', 'Detex.dll') but dlopen reads
+    ELF content regardless of extension, so we save Linux .so content under those
+    names.
+
+    - Oodle: downloaded from WorkingRobot/OodleUE (the same release CUE4Parse uses),
+      extracting lib/liboodle-data-shared.so.
+    - Detex: built from source (hglm/detex) — CUE4Parse ships no Linux Detex. Needs
+      git + a C compiler; if unavailable, logs a warning (texture export will fail
+      but data/JSON export still works).
+
+    Returns True if Oodle installed (the hard requirement); Detex failure only warns.
+    """
+    # Absolute paths: the Detex build runs gcc with cwd set to a temp dir,
+    # so a relative output path would resolve against the wrong directory.
+    be_dir = Path(be_dir).resolve()
+    oodle_dst = be_dir / "oodle-data-shared.dll"   # name the tool dlopen()s
+    detex_dst = be_dir / "Detex.dll"               # name the tool dlopen()s
+
+    # --- Oodle (required) ---
+    if oodle_dst.exists() and not force:
+        logger.info(f"Oodle already present at {oodle_dst}")
+    else:
+        logger.info("Downloading Linux Oodle library from OodleUE...")
+        dm = DependencyManager()
+        try:
+            oodle_tmp = dm.temp_dir / "oodle"
+            oodle_tmp.mkdir(parents=True, exist_ok=True)
+            zip_path = oodle_tmp / "gcc-x64-release.zip"
+            dm._download_file(_OODLE_LINUX_ZIP_URL, zip_path)
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                # Locate the data-shared .so entry regardless of nesting
+                entry = next((n for n in zf.namelist() if n.endswith("liboodle-data-shared.so")), None)
+                if not entry:
+                    logger.error("liboodle-data-shared.so not found in OodleUE zip")
+                    return False
+                with zf.open(entry) as src, open(oodle_dst, 'wb') as dst:
+                    shutil.copyfileobj(src, dst)
+            os.chmod(oodle_dst, 0o755)
+            logger.info(f"Oodle installed to {oodle_dst}")
+        finally:
+            dm.cleanup_temp_files()
+
+    # --- Detex (best-effort; only needed for texture export) ---
+    if detex_dst.exists() and not force:
+        logger.info(f"Detex already present at {detex_dst}")
+    else:
+        if not shutil.which("gcc") or not shutil.which("git"):
+            logger.warning(
+                "gcc and/or git not available — skipping Detex build. "
+                "Texture export will fail; data/JSON export is unaffected."
+            )
+        else:
+            logger.info("Building Linux Detex library from source...")
+            try:
+                detex_tmp = Path(DependencyManager().temp_dir) / "detex_build"
+                if detex_tmp.exists():
+                    shutil.rmtree(detex_tmp)
+                subprocess.run(["git", "clone", "--depth", "1", _DETEX_REPO, str(detex_tmp)],
+                               check=True, capture_output=True)
+                # The library translation units (the detex Makefile's module list) —
+                # excludes the standalone CLI programs (detex-convert.c, detex-view.c,
+                # validate.c) which carry their own main().
+                modules = [
+                    "bptc-tables", "bits", "clamp", "convert", "dds",
+                    "decompress-bc", "decompress-bptc", "decompress-bptc-float",
+                    "decompress-etc", "decompress-eac", "decompress-rgtc",
+                    "division-tables", "file-info", "half-float", "hdr", "ktx",
+                    "misc", "raw", "texture",
+                ]
+                objs = []
+                for m in modules:
+                    subprocess.run(["gcc", "-c", "-fPIC", "-std=c99",
+                                    "-D_POSIX_C_SOURCE=200809L", "-w", "-I.", "-O2",
+                                    f"{m}.c", "-o", f"{m}.o"],
+                                   check=True, cwd=str(detex_tmp), capture_output=True)
+                    objs.append(f"{m}.o")
+                subprocess.run(["gcc", "-shared", "-o", str(detex_dst)] + objs,
+                               check=True, cwd=str(detex_tmp), capture_output=True)
+                os.chmod(detex_dst, 0o755)
+                logger.info(f"Detex built and installed to {detex_dst}")
+            except subprocess.CalledProcessError as e:
+                logger.warning(
+                    f"Detex build failed ({e}); texture export will fail. "
+                    "Data/JSON export is unaffected."
+                )
+            except Exception as e:
+                logger.warning(f"Detex build error ({e}); texture export will fail.")
+
+    return oodle_dst.exists()
 
 
 def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
@@ -453,16 +609,104 @@ def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, for
         script_dir = Path(__file__).parent
         output_path = script_dir / "steam" / "DepotDownloader"
     
+    from utils import get_platform_key, executable_name
+
     dm = DependencyManager()
     try:
         return dm.download_github_release_latest(
             repo_owner="SteamRE",
             repo_name="DepotDownloader",
-            asset_pattern="windows-x64.zip",
+            asset_pattern=f"DepotDownloader-{get_platform_key()}.zip",
             output_path=output_path,
-            executable_name="DepotDownloader.exe",
+            executable_name=executable_name("DepotDownloader"),
             force=force
         )
+    finally:
+        dm.cleanup_temp_files()
+
+
+def install_ue4ss(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
+    """
+    Install UE4SS (RE-UE4SS) dependency from the experimental-latest GitHub release.
+
+    The experimental build supports UE5.4 while the stable v3.0.1 only goes up to
+    UE5.3 (WRFrontiers is UE5.4).
+
+    Zip layout: the experimental zip ships dwmapi.dll (the proxy loader) at its
+    root plus a "ue4ss/" subdirectory containing UE4SS.dll, Mods/ and the
+    settings ini.  We extract to a temp dir and assemble a flat staging dir at
+    src/mapper/ue4ss/ containing everything deploy() needs:
+        src/mapper/ue4ss/dwmapi.dll   (from zip root)
+        src/mapper/ue4ss/UE4SS.dll    (from zip's ue4ss/)
+        src/mapper/ue4ss/Mods/, UE4SS-settings.ini, ...
+
+    Linux only — on Windows the Dumper-7 DLL injection path is used instead.
+
+    Args:
+        output_path (str, optional): Staging directory. Defaults to src/mapper/ue4ss/
+        force (bool): Force download even if same version exists
+    """
+    if output_path is None:
+        script_dir = Path(__file__).parent
+        output_path = script_dir / "mapper" / "ue4ss"
+
+    output_path = Path(output_path)
+
+    # Skip if already installed at the target version (unless forced)
+    version_file = output_path / "version.txt"
+    dm = DependencyManager()
+    try:
+        # Extract into a temp dir, then assemble the staging dir from it
+        stage_temp = dm.temp_dir / "ue4ss_stage"
+        if stage_temp.exists():
+            shutil.rmtree(stage_temp)
+        stage_temp.mkdir(parents=True, exist_ok=True)
+
+        result = dm.download_github_release_latest(
+            repo_owner="UE4SS-RE",
+            repo_name="RE-UE4SS",
+            asset_pattern="UE4SS_v",
+            output_path=stage_temp,
+            executable_name=None,
+            force=force,
+            release_tag="experimental-latest",
+        )
+        if not result:
+            return False
+
+        # Assemble the flat staging dir. The zip gives us:
+        #   stage_temp/dwmapi.dll   and   stage_temp/ue4ss/<payload>
+        inner = stage_temp / "ue4ss"
+        if not inner.is_dir():
+            logger.error(f"Expected 'ue4ss/' dir in UE4SS zip, not found in {stage_temp}")
+            return False
+
+        # Reset the staging dir so stale files never linger
+        if output_path.exists():
+            shutil.rmtree(output_path)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Move the ue4ss/ payload up into the staging dir
+        for item in inner.iterdir():
+            shutil.move(str(item), str(output_path / item.name))
+
+        # Bring the proxy loader (dwmapi.dll) alongside UE4SS.dll
+        proxy_src = stage_temp / "dwmapi.dll"
+        if not proxy_src.exists():
+            logger.error(f"dwmapi.dll not found at zip root ({proxy_src}) — deploy() will fail")
+            return False
+        shutil.move(str(proxy_src), str(output_path / "dwmapi.dll"))
+
+        # Record the installed version
+        try:
+            version = (stage_temp / "version.txt").read_text().strip()
+            if version:
+                version_file.write_text(version)
+        except Exception:
+            pass
+
+        logger.info(f"UE4SS staged at {output_path}")
+        return True
     finally:
         dm.cleanup_temp_files()
 
@@ -470,27 +714,34 @@ def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, for
 def main(force_download: bool = False) -> bool:
     """
     Main function to install all dependencies.
-    
+
     Args:
         force_download (bool): Force download even if same version exists
     """
+    import platform
+
     logger.info("Installing WRFrontiers-Exporter dependencies...")
-    
+
     try:
         # Install BatchExport
         logger.info("Installing BatchExport...")
         install_batch_export(force=force_download)
-        
+
         # Install DepotDownloader
         logger.info("Installing DepotDownloader...")
         install_depot_downloader(force=force_download)
-        
+
+        # Install UE4SS (Linux only — Windows uses Dumper-7 DLL injection)
+        if platform.system().lower() == 'linux':
+            logger.info("Installing UE4SS (Linux mapper dependency)...")
+            install_ue4ss(force=force_download)
+
         logger.success("All dependencies installed successfully!")
-        
+
     except Exception as e:
         logger.error(f"Failed to install dependencies: {e}")
         return False
-    
+
     return True
 
 
