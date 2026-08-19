@@ -14,6 +14,7 @@ This module:
 
 All operations are idempotent: re-deploying over an existing install is safe.
 """
+from __future__ import annotations  # allow "str | Path" annotations on Python < 3.10
 import os
 import shutil
 from pathlib import Path
