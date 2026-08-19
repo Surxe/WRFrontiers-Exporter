@@ -181,5 +181,13 @@ OPTIONS_SCHEMA = {
         "help": "(Linux only) Path to the Proton installation directory (PROTONPATH). Must be the WRF-TLS custom build. Required for the mapper step on Linux; unused on Windows. Validated at runtime rather than via depends_on so it is not required on Windows.",
         "section": "Mapping (Linux)",
         "example": Path("/srv/dev/wrf/proton/GE-Proton10-34-WRF-TLS")
+    },
+    "HEADLESS": {
+        "env": "HEADLESS",
+        "arg": "--headless",
+        "type": bool,
+        "default": True,
+        "help": "(Linux only) Launch the game under gamescope's headless backend ('gamescope --backend headless') during the mapper step so no window appears on screen and no interactive desktop session is required. The GPU still renders offscreen; only the visible window is suppressed. Requires the 'gamescope' package. Ignored on Windows. Set to false to launch on the current DISPLAY (useful for debugging the launch visually).",
+        "section": "Mapping (Linux)",
     }
 }

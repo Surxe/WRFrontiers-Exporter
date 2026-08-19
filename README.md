@@ -59,10 +59,14 @@ copies it to `OUTPUT_MAPPER_FILE`. The mechanism is OS-specific:
 - Deploys UE4SS into the game's `Win64` directory (`dwmapi.dll` proxy + `UE4SS.dll`)
   along with a small `USMapAutoStart` Lua mod that calls UE4SS's built-in
   `DumpUSMAP()` and then exits
-- Launches `Shipping.exe` under the custom WRF-TLS Proton build via `umu-run`
+- Launches `Shipping.exe` under the custom WRF-TLS Proton build via `umu-run`,
+  by default wrapped in gamescope's headless backend (`gamescope --backend
+  headless`) so no window appears on screen and
+  no interactive desktop session is required (set `HEADLESS=false` to launch on
+  the real display instead)
 - Waits for UE4SS to write the `.usmap`, then terminates the game
-- Requires the one-time [Linux setup](#linux-setup) (umu-launcher + custom Proton)
-  and a graphical session — the game briefly opens on screen
+- Requires the one-time [Linux setup](#linux-setup) (umu-launcher + custom Proton
+  + gamescope)
 
 ### 4. BatchExport
 - Uses the mapper file and steam download
@@ -133,9 +137,21 @@ distro):
   [umu-launcher releases](https://github.com/Open-Wine-Components/umu-launcher/releases)
   (a `.deb` is provided for Debian/Ubuntu; other distros have their own
   packages). Verify with `umu-run --version`.
-- **A graphical session with a working GPU.** The mapper step opens the game
-  window on screen for a few seconds while UE4SS dumps the `.usmap`. A fully
-  headless run is not yet supported.
+- **gamescope** — `gamescope` — provides the headless display the mapper step
+  renders into when `HEADLESS` is enabled (the default). gamescope creates an
+  offscreen Vulkan swapchain the GPU renders into, so only the on-screen window is
+  suppressed. On Debian it lives in `trixie-backports/contrib`, so install with
+  `sudo apt-get -t trixie-backports install gamescope`. Set `HEADLESS=false` to
+  launch on your real `DISPLAY` instead (useful for watching the launch while
+  debugging), in which case gamescope is not needed.
+  (Note: plain `Xvfb` does **not** work with the NVIDIA proprietary driver — it
+  cannot present into Xvfb's software framebuffer — which is why gamescope's
+  headless backend is used.)
+- **A working GPU.** The mapper step launches the game under Proton to let UE4SS
+  dump the `.usmap`. With `HEADLESS` enabled it runs under gamescope's headless
+  backend with no visible window and no interactive desktop session required; with
+  `HEADLESS=false` it opens the game window on your current display for a few
+  seconds.
 
 The exporter's Linux-only dependencies (UE4SS, the Linux Oodle library, and the
 Detex build) are all handled automatically by the dependency step
@@ -309,6 +325,10 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Example: `"/srv/dev/wrf/proton/GE-Proton10-34-WRF-TLS"`
   - Default: None
   - Command line: `--proton-path`
+
+* **HEADLESS** - (Linux only) Launch the game under gamescope's headless backend ('gamescope --backend headless') during the mapper step so no window appears on screen and no interactive desktop session is required. The GPU still renders offscreen; only the visible window is suppressed. Requires the 'gamescope' package. Ignored on Windows. Set to false to launch on the current DISPLAY (useful for debugging the launch visually).
+  - Default: `"true"`
+  - Command line: `--headless`
 
 
 <!-- END_GENERATED_OPTIONS -->
