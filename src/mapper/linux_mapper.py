@@ -89,6 +89,16 @@ def main(options: Options) -> str:
         TimeoutError: If the .usmap does not appear within _DUMP_TIMEOUT seconds.
         RuntimeError: On any other unrecoverable failure.
     """
+    # WINE_PREFIX / PROTON_PATH are optional at the schema level (so they are not
+    # required on Windows), so enforce them here for the Linux mapper path.
+    missing = [name for name, val in (("WINE_PREFIX", options.wine_prefix),
+                                      ("PROTON_PATH", options.proton_path)) if not val]
+    if missing:
+        raise ValueError(
+            f"{', '.join(missing)} must be set for the Linux mapper step. "
+            "See the 'Linux setup' section of the README."
+        )
+
     win64_dir = _get_win64_dir(options)
     shipping_exe = win64_dir / "WRFrontiers-Win64-Shipping.exe"
 

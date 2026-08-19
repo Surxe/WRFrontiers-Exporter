@@ -300,17 +300,15 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 
 #### Mapping (Linux)
 
-* **WINE_PREFIX** - (Linux only) Path to the Wine prefix directory (WINEPREFIX). Required when SHOULD_GET_MAPPER is true on Linux.
+* **WINE_PREFIX** - (Linux only) Path to the Wine prefix directory (WINEPREFIX). Required for the mapper step on Linux; unused on Windows. Validated at runtime rather than via depends_on so it is not required on Windows.
   - Example: `"/srv/dev/wrf/prefix"`
-  - Default: None - required when SHOULD_GET_MAPPER is True
+  - Default: None
   - Command line: `--wine-prefix`
-  - Depends on: `SHOULD_GET_MAPPER`
 
-* **PROTON_PATH** - (Linux only) Path to the Proton installation directory (PROTONPATH). Required when SHOULD_GET_MAPPER is true on Linux. Must be the WRF-TLS custom build.
+* **PROTON_PATH** - (Linux only) Path to the Proton installation directory (PROTONPATH). Must be the WRF-TLS custom build. Required for the mapper step on Linux; unused on Windows. Validated at runtime rather than via depends_on so it is not required on Windows.
   - Example: `"/srv/dev/wrf/proton/GE-Proton10-34-WRF-TLS"`
-  - Default: None - required when SHOULD_GET_MAPPER is True
+  - Default: None
   - Command line: `--proton-path`
-  - Depends on: `SHOULD_GET_MAPPER`
 
 
 <!-- END_GENERATED_OPTIONS -->
