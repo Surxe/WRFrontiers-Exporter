@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import zipfile
+import tarfile
 import shutil
 from pathlib import Path
 from urllib.request import urlopen, Request
@@ -114,14 +115,16 @@ class DependencyManager:
             logger.info(f"Output directory: {output_path}")
             
             self._download_file(download_url, zip_path)
-            
-            # Validate the downloaded file
-            if not self._validate_zip_file(zip_path):
-                raise Exception("Downloaded file is not a valid ZIP archive")
-            
-            # Extract the file
+
+            # Extract the file (dispatch on archive type: .zip or .tar.gz/.tgz)
             logger.info("Extracting files...")
-            self._extract_zip(zip_path, output_path)
+            lower_name = zip_path.name.lower()
+            if lower_name.endswith('.tar.gz') or lower_name.endswith('.tgz'):
+                self._extract_tar(zip_path, output_path)
+            else:
+                if not self._validate_zip_file(zip_path):
+                    raise Exception("Downloaded file is not a valid ZIP archive")
+                self._extract_zip(zip_path, output_path)
             
             # Verify extraction
             if executable_name:
@@ -225,11 +228,12 @@ class DependencyManager:
                 logger.info(f"Processing asset: {asset['name']}")
                 
                 try:
-                    # For non-ZIP files (like README.md), just download them directly
-                    if not asset['name'].lower().endswith('.zip'):
+                    # Extract recognized archives; download everything else (README.md) as-is
+                    name_lower = asset['name'].lower()
+                    is_archive = name_lower.endswith('.zip') or name_lower.endswith('.tar.gz') or name_lower.endswith('.tgz')
+                    if not is_archive:
                         self._download_single_file(download_url, output_path / asset['name'])
                     else:
-                        # For ZIP files, use the existing extraction logic
                         result = self.download_and_extract(download_url, output_path, executable_name, version=version)
                         if not result:
                             success = False
@@ -364,6 +368,32 @@ class DependencyManager:
         except Exception as e:
             raise Exception(f"Failed to extract ZIP file: {e}")
     
+    def _extract_tar(self, tar_path: Path, output_path: Path) -> None:
+        """Extract a .tar.gz/.tgz archive to output directory, preserving perms."""
+        try:
+            with tarfile.open(tar_path, 'r:gz') as tf:
+                members = tf.getnames()
+                logger.debug("Archive contents:")
+                for name in members[:10]:
+                    logger.debug(f"  {name}")
+                if len(members) > 10:
+                    logger.debug(f"  ... and {len(members) - 10} more files")
+
+                # 'data' filter (Python 3.12+) blocks unsafe absolute/parent paths.
+                # Fall back to a plain extractall on older interpreters.
+                try:
+                    tf.extractall(output_path, filter='data')
+                except TypeError:
+                    tf.extractall(output_path)
+
+                # Flatten structure if everything is in a single subdirectory
+                self._flatten_extraction(output_path)
+
+                logger.info(f"Extracted {len(members)} files to {output_path}")
+
+        except Exception as e:
+            raise Exception(f"Failed to extract tar.gz file: {e}")
+
     def _flatten_extraction(self, output_path: Path) -> None:
         """
         If extraction created a single subdirectory containing all files,
@@ -431,15 +461,21 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
     if output_path is None:
         script_dir = Path(__file__).parent
         output_path = script_dir / "batch_export" / "BatchExport"
-    
+
+    from utils import get_platform_key, executable_name
+
+    # Platform-aware asset: linux ships a .tar.gz, windows a .zip
+    plat = get_platform_key()  # e.g. "linux-x64", "windows-x64"
+    archive_ext = "zip" if plat.startswith("windows") else "tar.gz"
+
     dm = DependencyManager()
     try:
         return dm.download_github_release_latest(
             repo_owner="Surxe",
-            repo_name="CUE4P-BatchExport", 
-            asset_pattern=["BatchExport-windows-x64.zip", "README.md"],
+            repo_name="CUE4P-BatchExport",
+            asset_pattern=[f"BatchExport-{plat}.{archive_ext}", "README.md"],
             output_path=output_path,
-            executable_name="BatchExport.exe",
+            executable_name=executable_name("BatchExport"),
             force=force
         )
     finally:

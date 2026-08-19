@@ -7,7 +7,7 @@ from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from optionsconfig import init_options, Options
-from utils import run_process
+from utils import run_process, executable_name
 from loguru import logger
 
 class BatchExporter:
@@ -35,9 +35,9 @@ class BatchExporter:
         self.options = options
         self.mapping_file_path = mapping_file_path
         
-        # Path to BatchExport executable
+        # Path to BatchExport executable (platform-aware: .exe on Windows, bare on Linux)
         self.batch_export_dir = Path(__file__).parent / "BatchExport"
-        self.executable_path = self.batch_export_dir / "BatchExport.exe"
+        self.executable_path = self.batch_export_dir / executable_name("BatchExport")
         
         # Build the command once during initialization
         self.command = [
