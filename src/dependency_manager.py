@@ -499,6 +499,22 @@ _OODLE_RELEASE = "2026-06-04-1357"
 _OODLE_LINUX_ZIP_URL = f"https://github.com/WorkingRobot/OodleUE/releases/download/{_OODLE_RELEASE}/gcc-x64-release.zip"
 _DETEX_REPO = "https://github.com/hglm/detex.git"
 
+# SkiaSharp native library, used by CUE4Parse-Conversion to ENCODE decoded texture
+# pixels into PNG (Detex only decodes BCn -> raw). The linux-x64 BatchExport single-
+# file bundle ships the managed SkiaSharp.dll but not the native libSkiaSharp.so, so
+# PNG texture export fails without it. We fetch the matching native lib from the
+# NuGet package and drop it next to the binary.
+# The version must match the managed SkiaSharp the build was compiled against —
+# re-derive after a BatchExport update with:
+#   strings BatchExport | grep -oiE 'SkiaSharp/[0-9.]+'
+# The '.NoDependencies' variant is fully self-contained (no fontconfig/freetype),
+# which is all texture export needs.
+_SKIASHARP_VERSION = "3.119.1"
+_SKIASHARP_NUPKG_URL = (
+    "https://www.nuget.org/api/v2/package/"
+    f"SkiaSharp.NativeAssets.Linux.NoDependencies/{_SKIASHARP_VERSION}"
+)
+
 
 def install_batch_export_native_libs(be_dir: Path, force: bool = False) -> bool:
     """
@@ -515,14 +531,21 @@ def install_batch_export_native_libs(be_dir: Path, force: bool = False) -> bool:
     - Detex: built from source (hglm/detex) — CUE4Parse ships no Linux Detex. Needs
       git + a C compiler; if unavailable, logs a warning (texture export will fail
       but data/JSON export still works).
+    - libSkiaSharp: extracted from the SkiaSharp NuGet package — the linux-x64
+      BatchExport bundle omits it, so PNG texture encoding fails without it.
+      Saved as 'libSkiaSharp.so' (the name SkiaSharp's P/Invoke dlopen()s).
+      Best-effort; failure only warns (texture export will fail, data/JSON is
+      unaffected).
 
-    Returns True if Oodle installed (the hard requirement); Detex failure only warns.
+    Returns True if Oodle installed (the hard requirement); Detex/SkiaSharp
+    failures only warn.
     """
     # Absolute paths: the Detex build runs gcc with cwd set to a temp dir,
     # so a relative output path would resolve against the wrong directory.
     be_dir = Path(be_dir).resolve()
     oodle_dst = be_dir / "oodle-data-shared.dll"   # name the tool dlopen()s
     detex_dst = be_dir / "Detex.dll"               # name the tool dlopen()s
+    skia_dst = be_dir / "libSkiaSharp.so"          # name SkiaSharp P/Invoke dlopen()s
 
     # --- Oodle (required) ---
     if oodle_dst.exists() and not force:
@@ -593,6 +616,37 @@ def install_batch_export_native_libs(be_dir: Path, force: bool = False) -> bool:
                 )
             except Exception as e:
                 logger.warning(f"Detex build error ({e}); texture export will fail.")
+
+    # --- libSkiaSharp (best-effort; only needed for PNG texture encoding) ---
+    if skia_dst.exists() and not force:
+        logger.info(f"libSkiaSharp already present at {skia_dst}")
+    else:
+        logger.info(f"Downloading libSkiaSharp {_SKIASHARP_VERSION} from NuGet...")
+        dm = DependencyManager()
+        try:
+            skia_tmp = dm.temp_dir / "skiasharp"
+            skia_tmp.mkdir(parents=True, exist_ok=True)
+            nupkg_path = skia_tmp / "skiasharp.nupkg"
+            dm._download_file(_SKIASHARP_NUPKG_URL, nupkg_path)
+            with zipfile.ZipFile(nupkg_path) as zf:
+                entry = "runtimes/linux-x64/native/libSkiaSharp.so"
+                if entry not in zf.namelist():
+                    logger.warning(
+                        f"{entry} not found in SkiaSharp nupkg; texture export will "
+                        "fail. Data/JSON export is unaffected."
+                    )
+                else:
+                    with zf.open(entry) as src, open(skia_dst, 'wb') as dst:
+                        shutil.copyfileobj(src, dst)
+                    os.chmod(skia_dst, 0o755)
+                    logger.info(f"libSkiaSharp installed to {skia_dst}")
+        except Exception as e:
+            logger.warning(
+                f"libSkiaSharp install failed ({e}); texture export will fail. "
+                "Data/JSON export is unaffected."
+            )
+        finally:
+            dm.cleanup_temp_files()
 
     return oodle_dst.exists()
 
