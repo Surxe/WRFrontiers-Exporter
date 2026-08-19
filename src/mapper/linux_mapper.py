@@ -104,11 +104,12 @@ def main(options: Options) -> str:
 
     mappings_dir = get_mappings_dir(win64_dir)
 
-    # 2. Clear previous dump output so we don't mistake a stale file for success
-    if mappings_dir.is_dir():
-        logger.info(f"Clearing previous UE4SS Mappings output: {mappings_dir}")
-        shutil.rmtree(mappings_dir)
-    mappings_dir.mkdir(parents=True, exist_ok=True)
+    # 2. Clear previous dump output so we don't mistake a stale file for success.
+    # NOTE: mappings_dir is the Win64 dir itself (UE4SS writes .usmap there),
+    # so only delete stale *.usmap files — never the whole directory.
+    for stale in mappings_dir.glob("*.usmap"):
+        logger.info(f"Removing stale usmap: {stale.name}")
+        stale.unlink()
 
     # 3. Launch game under umu-run
     env = _build_env(options)

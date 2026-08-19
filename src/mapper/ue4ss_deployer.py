@@ -29,8 +29,9 @@ _STAGED_DIR = Path(__file__).parent / "ue4ss"
 # Both must exist before deploy() is called.
 _REQUIRED_STAGED = ["UE4SS.dll", "dwmapi.dll"]
 
-# Path within game's Win64 dir where UE4SS outputs mappings
-MAPPINGS_SUBDIR = "Mappings"
+# UE4SS's generate_usmap() writes the .usmap directly into its working
+# directory (the game's Win64 folder), named "{game}-{engine}-{sha}.usmap".
+# It does NOT use a Mappings/ subdirectory.
 
 # UE4SS-settings.ini written on deployment — headless-friendly, no GUI
 _SETTINGS_INI = """\
@@ -156,8 +157,11 @@ RegisterInitGameStatePostHook(function()
     -- game-state hook fires.  2 s is conservative; the dump itself is fast.
     ExecuteWithDelay(2000, function()
         print("[USMapAutoStart] Triggering USMAP dump...")
-        GenerateMappings()
-        print("[USMapAutoStart] GenerateMappings() returned. Exiting process.")
+        -- DumpUSMAP() is UE4SS's built-in USMAP generator (registered in
+        -- LuaMod.cpp -> OutTheShade::generate_usmap()).  It writes the
+        -- .usmap into the Mappings/ subdir of the game's Win64 folder.
+        DumpUSMAP()
+        print("[USMapAutoStart] DumpUSMAP() returned. Exiting process.")
         -- Exit cleanly so umu-run terminates and the Python poller can detect
         -- the output file and move on.
         os.exit(0)
@@ -242,5 +246,9 @@ def deploy(win64_dir: str | Path) -> None:
 
 
 def get_mappings_dir(win64_dir: str | Path) -> Path:
-    """Return the path where UE4SS will write the .usmap file."""
-    return Path(win64_dir) / MAPPINGS_SUBDIR
+    """Return the directory where UE4SS writes the .usmap file.
+
+    generate_usmap() writes to its working directory, which is the game's
+    Win64 folder itself (not a subdirectory).
+    """
+    return Path(win64_dir)
