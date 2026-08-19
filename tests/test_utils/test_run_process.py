@@ -60,7 +60,8 @@ class TestRunProcess(unittest.TestCase):
             "echo hello",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
         
         # Verify logger calls
@@ -97,7 +98,8 @@ class TestRunProcess(unittest.TestCase):
             ["ls", "-l"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
         
         # Verify logger was called
@@ -321,7 +323,8 @@ class TestRunProcess(unittest.TestCase):
             ['bash', 'script.sh'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
     
     @patch('os.name', 'nt')  # Mock Windows OS
@@ -342,7 +345,8 @@ class TestRunProcess(unittest.TestCase):
             ['bash', 'myscript.sh', '--arg1', 'value'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
     
     @patch('os.name', 'nt')  # Mock Windows OS
@@ -363,7 +367,8 @@ class TestRunProcess(unittest.TestCase):
             "python script.py",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
     
     @patch('os.name', 'posix')  # Mock Unix-like OS
@@ -384,7 +389,8 @@ class TestRunProcess(unittest.TestCase):
             "script.sh",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
     
     @patch('os.name', 'nt')  # Mock Windows OS
@@ -405,7 +411,8 @@ class TestRunProcess(unittest.TestCase):
             [],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
     
     @patch('os.name', 'nt')  # Mock Windows OS  
@@ -426,7 +433,8 @@ class TestRunProcess(unittest.TestCase):
             ["python", "script.py", "--arg"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
     
     @patch('builtins.hasattr', side_effect=lambda obj, attr: False if attr == 'select' else hasattr(obj, attr))
@@ -481,7 +489,8 @@ class TestRunProcess(unittest.TestCase):
             "long_running_command",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
         
         # Verify function returns the process object
@@ -509,7 +518,8 @@ class TestRunProcess(unittest.TestCase):
             ["python", "server.py"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            env=None
         )
         
         # Verify function returns the process object

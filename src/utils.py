@@ -76,7 +76,7 @@ def normalize_path(path: str) -> str:
 #           Process           #
 ###############################
 
-def run_process(options: Union[List[str], str], name: str = '', timeout: int = 60*60, background: bool = False) -> Optional[subprocess.Popen]: #times out after 1hr
+def run_process(options: Union[List[str], str], name: str = '', timeout: int = 60*60, background: bool = False, env: Optional[dict] = None) -> Optional[subprocess.Popen]: #times out after 1hr
     """Runs a subprocess with the given options and logs its output line by line
 
     Args:
@@ -84,14 +84,15 @@ def run_process(options: Union[List[str], str], name: str = '', timeout: int = 6
         name (str, optional): An optional name to identify the process in logs. Defaults to ''
         timeout (int, optional): Maximum time to wait for process completion in seconds. Defaults to 3600 (1 hour)
         background (bool, optional): If True, starts the process in background and returns the process object. Defaults to False.
-    
+        env (dict, optional): Environment variables for the subprocess. If None, inherits the current environment.
+
     Returns:
         subprocess.Popen: If background=True, returns the process object for later management
         None: If background=False (default), waits for completion and returns None
     """
     import select
     import time
-    
+
     process = None
     try:
         # Handle shell scripts on Windows by explicitly using bash
@@ -101,7 +102,7 @@ def run_process(options: Union[List[str], str], name: str = '', timeout: int = 6
             options = ['bash'] + options
 
         process = subprocess.Popen(  # noqa: F821
-            options, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            options, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env
         )
 
         # If background mode, return the process object immediately

@@ -5,6 +5,7 @@ import time
 import zipfile
 import tarfile
 import shutil
+import subprocess
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
@@ -470,7 +471,7 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
 
     dm = DependencyManager()
     try:
-        return dm.download_github_release_latest(
+        result = dm.download_github_release_latest(
             repo_owner="Surxe",
             repo_name="CUE4P-BatchExport",
             asset_pattern=[f"BatchExport-{plat}.{archive_ext}", "README.md"],
@@ -480,6 +481,120 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
         )
     finally:
         dm.cleanup_temp_files()
+
+    if not result:
+        return False
+
+    # On Linux, CUE4Parse's bundled Oodle/Detex native libs are Windows-only.
+    # Provide Linux equivalents next to the binary so pak/texture decompression works.
+    if plat.startswith("linux"):
+        result = install_batch_export_native_libs(Path(output_path), force=force) and result
+
+    return result
+
+
+# OodleUE release providing the Linux Oodle shared object (mirrors CUE4Parse's
+# own source: FabianFG/CUE4Parse OodleHelper.cs RELEASE_URL + LINUX_ZIP).
+_OODLE_RELEASE = "2026-06-04-1357"
+_OODLE_LINUX_ZIP_URL = f"https://github.com/WorkingRobot/OodleUE/releases/download/{_OODLE_RELEASE}/gcc-x64-release.zip"
+_DETEX_REPO = "https://github.com/hglm/detex.git"
+
+
+def install_batch_export_native_libs(be_dir: Path, force: bool = False) -> bool:
+    """
+    Install the Linux native decompression libraries next to the BatchExport binary.
+
+    CUE4Parse loads Oodle and Detex by bare filename via dlopen, so both must sit
+    on LD_LIBRARY_PATH (run_batch_export adds be_dir). The tool loads them under
+    their Windows names ('oodle-data-shared.dll', 'Detex.dll') but dlopen reads
+    ELF content regardless of extension, so we save Linux .so content under those
+    names.
+
+    - Oodle: downloaded from WorkingRobot/OodleUE (the same release CUE4Parse uses),
+      extracting lib/liboodle-data-shared.so.
+    - Detex: built from source (hglm/detex) — CUE4Parse ships no Linux Detex. Needs
+      git + a C compiler; if unavailable, logs a warning (texture export will fail
+      but data/JSON export still works).
+
+    Returns True if Oodle installed (the hard requirement); Detex failure only warns.
+    """
+    # Absolute paths: the Detex build runs gcc with cwd set to a temp dir,
+    # so a relative output path would resolve against the wrong directory.
+    be_dir = Path(be_dir).resolve()
+    oodle_dst = be_dir / "oodle-data-shared.dll"   # name the tool dlopen()s
+    detex_dst = be_dir / "Detex.dll"               # name the tool dlopen()s
+
+    # --- Oodle (required) ---
+    if oodle_dst.exists() and not force:
+        logger.info(f"Oodle already present at {oodle_dst}")
+    else:
+        logger.info("Downloading Linux Oodle library from OodleUE...")
+        dm = DependencyManager()
+        try:
+            oodle_tmp = dm.temp_dir / "oodle"
+            oodle_tmp.mkdir(parents=True, exist_ok=True)
+            zip_path = oodle_tmp / "gcc-x64-release.zip"
+            dm._download_file(_OODLE_LINUX_ZIP_URL, zip_path)
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                # Locate the data-shared .so entry regardless of nesting
+                entry = next((n for n in zf.namelist() if n.endswith("liboodle-data-shared.so")), None)
+                if not entry:
+                    logger.error("liboodle-data-shared.so not found in OodleUE zip")
+                    return False
+                with zf.open(entry) as src, open(oodle_dst, 'wb') as dst:
+                    shutil.copyfileobj(src, dst)
+            os.chmod(oodle_dst, 0o755)
+            logger.info(f"Oodle installed to {oodle_dst}")
+        finally:
+            dm.cleanup_temp_files()
+
+    # --- Detex (best-effort; only needed for texture export) ---
+    if detex_dst.exists() and not force:
+        logger.info(f"Detex already present at {detex_dst}")
+    else:
+        if not shutil.which("gcc") or not shutil.which("git"):
+            logger.warning(
+                "gcc and/or git not available — skipping Detex build. "
+                "Texture export will fail; data/JSON export is unaffected."
+            )
+        else:
+            logger.info("Building Linux Detex library from source...")
+            try:
+                detex_tmp = Path(DependencyManager().temp_dir) / "detex_build"
+                if detex_tmp.exists():
+                    shutil.rmtree(detex_tmp)
+                subprocess.run(["git", "clone", "--depth", "1", _DETEX_REPO, str(detex_tmp)],
+                               check=True, capture_output=True)
+                # The library translation units (the detex Makefile's module list) —
+                # excludes the standalone CLI programs (detex-convert.c, detex-view.c,
+                # validate.c) which carry their own main().
+                modules = [
+                    "bptc-tables", "bits", "clamp", "convert", "dds",
+                    "decompress-bc", "decompress-bptc", "decompress-bptc-float",
+                    "decompress-etc", "decompress-eac", "decompress-rgtc",
+                    "division-tables", "file-info", "half-float", "hdr", "ktx",
+                    "misc", "raw", "texture",
+                ]
+                objs = []
+                for m in modules:
+                    subprocess.run(["gcc", "-c", "-fPIC", "-std=c99",
+                                    "-D_POSIX_C_SOURCE=200809L", "-w", "-I.", "-O2",
+                                    f"{m}.c", "-o", f"{m}.o"],
+                                   check=True, cwd=str(detex_tmp), capture_output=True)
+                    objs.append(f"{m}.o")
+                subprocess.run(["gcc", "-shared", "-o", str(detex_dst)] + objs,
+                               check=True, cwd=str(detex_tmp), capture_output=True)
+                os.chmod(detex_dst, 0o755)
+                logger.info(f"Detex built and installed to {detex_dst}")
+            except subprocess.CalledProcessError as e:
+                logger.warning(
+                    f"Detex build failed ({e}); texture export will fail. "
+                    "Data/JSON export is unaffected."
+                )
+            except Exception as e:
+                logger.warning(f"Detex build error ({e}); texture export will fail.")
+
+    return oodle_dst.exists()
 
 
 def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
@@ -517,14 +632,13 @@ def install_ue4ss(output_path: Optional[Union[str, Path]] = None, force: bool = 
     The experimental build supports UE5.4 while the stable v3.0.1 only goes up to
     UE5.3 (WRFrontiers is UE5.4).
 
-    Zip layout note: the experimental zip packages everything under a "ue4ss/"
-    subdirectory, so we extract to the *parent* of the staging dir (src/mapper/).
-    This ensures UE4SS.dll lands at src/mapper/ue4ss/UE4SS.dll.
-
-    The experimental zip no longer ships dwmapi.dll (the proxy loader).  We
-    download it separately from the stable v3.0.1 release which ships a compatible
-    proxy — the proxy only calls LoadLibrary("UE4SS.dll") so version mismatches
-    don't matter.
+    Zip layout: the experimental zip ships dwmapi.dll (the proxy loader) at its
+    root plus a "ue4ss/" subdirectory containing UE4SS.dll, Mods/ and the
+    settings ini.  We extract to a temp dir and assemble a flat staging dir at
+    src/mapper/ue4ss/ containing everything deploy() needs:
+        src/mapper/ue4ss/dwmapi.dll   (from zip root)
+        src/mapper/ue4ss/UE4SS.dll    (from zip's ue4ss/)
+        src/mapper/ue4ss/Mods/, UE4SS-settings.ini, ...
 
     Linux only — on Windows the Dumper-7 DLL injection path is used instead.
 
@@ -537,50 +651,64 @@ def install_ue4ss(output_path: Optional[Union[str, Path]] = None, force: bool = 
         output_path = script_dir / "mapper" / "ue4ss"
 
     output_path = Path(output_path)
-    # Extract to the PARENT so the zip's "ue4ss/" prefix places files correctly
-    extract_parent = output_path.parent
 
+    # Skip if already installed at the target version (unless forced)
+    version_file = output_path / "version.txt"
     dm = DependencyManager()
     try:
+        # Extract into a temp dir, then assemble the staging dir from it
+        stage_temp = dm.temp_dir / "ue4ss_stage"
+        if stage_temp.exists():
+            shutil.rmtree(stage_temp)
+        stage_temp.mkdir(parents=True, exist_ok=True)
+
         result = dm.download_github_release_latest(
             repo_owner="UE4SS-RE",
             repo_name="RE-UE4SS",
             asset_pattern="UE4SS_v",
-            output_path=extract_parent,
+            output_path=stage_temp,
             executable_name=None,
             force=force,
             release_tag="experimental-latest",
         )
+        if not result:
+            return False
+
+        # Assemble the flat staging dir. The zip gives us:
+        #   stage_temp/dwmapi.dll   and   stage_temp/ue4ss/<payload>
+        inner = stage_temp / "ue4ss"
+        if not inner.is_dir():
+            logger.error(f"Expected 'ue4ss/' dir in UE4SS zip, not found in {stage_temp}")
+            return False
+
+        # Reset the staging dir so stale files never linger
+        if output_path.exists():
+            shutil.rmtree(output_path)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Move the ue4ss/ payload up into the staging dir
+        for item in inner.iterdir():
+            shutil.move(str(item), str(output_path / item.name))
+
+        # Bring the proxy loader (dwmapi.dll) alongside UE4SS.dll
+        proxy_src = stage_temp / "dwmapi.dll"
+        if not proxy_src.exists():
+            logger.error(f"dwmapi.dll not found at zip root ({proxy_src}) — deploy() will fail")
+            return False
+        shutil.move(str(proxy_src), str(output_path / "dwmapi.dll"))
+
+        # Record the installed version
+        try:
+            version = (stage_temp / "version.txt").read_text().strip()
+            if version:
+                version_file.write_text(version)
+        except Exception:
+            pass
+
+        logger.info(f"UE4SS staged at {output_path}")
+        return True
     finally:
         dm.cleanup_temp_files()
-
-    if not result:
-        return False
-
-    # Fetch dwmapi.dll from the stable v3.0.1 release if it's missing.
-    # The proxy is only 58 KB and is stable — it just calls LoadLibrary("UE4SS.dll").
-    proxy_dst = output_path / "dwmapi.dll"
-    if not proxy_dst.exists() or force:
-        logger.info("Fetching dwmapi.dll proxy from UE4SS v3.0.1...")
-        dm2 = DependencyManager()
-        try:
-            # Download v3.0.1 zip to a temp location and extract only dwmapi.dll
-            v301_url = "https://github.com/UE4SS-RE/RE-UE4SS/releases/download/v3.0.1/UE4SS_v3.0.1.zip"
-            proxy_temp_dir = dm2.temp_dir / "ue4ss_proxy"
-            proxy_temp_dir.mkdir(exist_ok=True)
-            dm2.download_and_extract(v301_url, proxy_temp_dir, version="v3.0.1-proxy")
-            proxy_src = proxy_temp_dir / "dwmapi.dll"
-            if proxy_src.exists():
-                import shutil as _shutil
-                _shutil.copy2(proxy_src, proxy_dst)
-                logger.info(f"dwmapi.dll proxy installed to {proxy_dst}")
-            else:
-                logger.error("dwmapi.dll not found in v3.0.1 zip — deploy() will fail")
-                return False
-        finally:
-            dm2.cleanup_temp_files()
-
-    return True
 
 
 def main(force_download: bool = False) -> bool:
