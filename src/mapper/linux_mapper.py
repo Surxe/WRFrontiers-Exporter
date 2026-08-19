@@ -17,6 +17,7 @@ Required env / options (see options_schema.py):
   options.output_mapper_file       -- where to copy the final .usmap
   options.wine_prefix              -- WINEPREFIX path  (Linux only)
   options.proton_path              -- PROTONPATH path  (Linux only)
+  options.headless                 -- launch under gamescope's headless backend (no window)
 """
 import os
 import signal
@@ -31,6 +32,9 @@ from optionsconfig import Options
 
 from mapper.ue4ss_deployer import deploy as deploy_ue4ss, get_mappings_dir
 
+# Directory for launcher output logs (repo-root/logs, alongside default.log)
+_LOGS_DIR = Path(__file__).resolve().parents[2] / "logs"
+
 # Relative path from steam_game_download_dir to Win64 directory
 _WIN64_REL = os.path.join("13_2017027", "WRFrontiers", "Binaries", "Win64")
 
@@ -40,9 +44,48 @@ _POLL_INTERVAL = 2.0
 # Maximum seconds to wait for the dump before giving up
 _DUMP_TIMEOUT = 120
 
+# Offscreen render resolution for gamescope's headless backend. The game never
+# presents a real frame to a monitor, so the exact size is unimportant — it only
+# sizes the offscreen surface the swapchain targets. Kept small to save VRAM.
+_GAMESCOPE_W = 1280
+_GAMESCOPE_H = 720
+
 
 def _get_win64_dir(options: Options) -> Path:
     return Path(options.steam_game_download_dir) / _WIN64_REL
+
+
+def _build_launch_cmd(shipping_exe: Path, headless: bool) -> list:
+    """
+    Build the launch command for the game.
+
+    Headless wraps ``umu-run`` in gamescope's headless backend
+    (``gamescope --backend headless``): gamescope creates an offscreen Vulkan
+    swapchain that the NVIDIA driver renders into and exposes a nested display to
+    the child, so no window reaches the real desktop and no interactive session is
+    required. (Xvfb does not work here — the NVIDIA proprietary driver cannot
+    present into its software framebuffer.)
+
+    Raises:
+        FileNotFoundError: If HEADLESS is requested but gamescope is not installed.
+    """
+    umu = ["umu-run", str(shipping_exe)]
+    if not headless:
+        return umu
+
+    if shutil.which("gamescope") is None:
+        raise FileNotFoundError(
+            "gamescope is not installed but HEADLESS is enabled. Install it with "
+            "'sudo apt-get -t trixie-backports install gamescope', or set "
+            "HEADLESS=false to launch on the current DISPLAY."
+        )
+
+    return [
+        "gamescope", "--backend", "headless",
+        "-W", str(_GAMESCOPE_W), "-H", str(_GAMESCOPE_H),
+        "-r", "60",
+        "--", *umu,
+    ]
 
 
 def _find_usmap(mappings_dir: Path) -> Optional[Path]:
@@ -54,7 +97,12 @@ def _find_usmap(mappings_dir: Path) -> Optional[Path]:
 
 
 def _build_env(options: Options) -> dict:
-    """Build the env-var dict for umu-run."""
+    """Build the env-var dict for the launch.
+
+    When headless, gamescope injects its own nested display into the child game,
+    so DISPLAY is left as-is (gamescope reads the ambient one to start its
+    headless backend). When not headless, the game inherits the ambient DISPLAY.
+    """
     env = os.environ.copy()
     env["WINEPREFIX"] = str(options.wine_prefix)
     env["GAMEID"] = "0"
@@ -121,70 +169,96 @@ def main(options: Options) -> str:
         logger.info(f"Removing stale usmap: {stale.name}")
         stale.unlink()
 
-    # 3. Launch game under umu-run
-    env = _build_env(options)
-    cmd = ["umu-run", str(shipping_exe)]
-    logger.info(f"Launching game: {' '.join(cmd)}")
-    logger.debug(f"  WINEPREFIX={env['WINEPREFIX']}")
-    logger.debug(f"  PROTONPATH={env['PROTONPATH']}")
-
-    proc = subprocess.Popen(
-        cmd,
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    logger.info(f"umu-run PID: {proc.pid}")
-
-    # 4. Poll for .usmap
-    usmap_path: Optional[Path] = None
-    deadline = time.monotonic() + _DUMP_TIMEOUT
-    logger.info(f"Waiting up to {_DUMP_TIMEOUT}s for UE4SS USMAP dump in {mappings_dir}...")
-
-    while time.monotonic() < deadline:
-        # Check if the process already exited (os.exit(0) from the Lua mod)
-        ret = proc.poll()
-        if ret is not None:
-            logger.info(f"umu-run exited with code {ret} — checking for dump output...")
-            break
-
-        usmap_path = _find_usmap(mappings_dir)
-        if usmap_path:
-            logger.info(f"USMAP dump detected: {usmap_path}")
-            break
-
-        time.sleep(_POLL_INTERVAL)
+    # 3. Build the launch command. When headless, this wraps umu-run in
+    # gamescope's headless backend so no window reaches the real desktop.
+    cmd = _build_launch_cmd(shipping_exe, options.headless)
+    if options.headless:
+        logger.info("HEADLESS enabled — launching under gamescope --backend headless.")
     else:
-        # Timeout: kill and raise
+        logger.info("HEADLESS disabled — launching on the current DISPLAY.")
+
+    umu_log = None
+    try:
+        # 4. Launch the game.
+        # Tee the launcher's stdout/stderr to a log file rather than an un-drained
+        # PIPE: the PIPE is never read during the poll loop, so a chatty game
+        # could fill the ~64KB buffer and deadlock, and its output (gamescope/
+        # Proton/Wine/vkd3d/Vulkan errors) is exactly what we need when the dump
+        # fails.
+        env = _build_env(options)
+        umu_log_path = _LOGS_DIR / "umu-run.log"
+        umu_log_path.parent.mkdir(parents=True, exist_ok=True)
+        umu_log = open(umu_log_path, "w")
+
+        logger.info(f"Launching game: {' '.join(cmd)}")
+        logger.info(f"  launcher output -> {umu_log_path}")
+        logger.debug(f"  DISPLAY={env.get('DISPLAY', '(inherited/unset)')}")
+        logger.debug(f"  WINEPREFIX={env['WINEPREFIX']}")
+        logger.debug(f"  PROTONPATH={env['PROTONPATH']}")
+
+        proc = subprocess.Popen(
+            cmd,
+            env=env,
+            stdout=umu_log,
+            stderr=subprocess.STDOUT,
+        )
+        logger.info(f"launcher PID: {proc.pid}")
+
+        # 5. Poll for .usmap
+        usmap_path: Optional[Path] = None
+        deadline = time.monotonic() + _DUMP_TIMEOUT
+        logger.info(f"Waiting up to {_DUMP_TIMEOUT}s for UE4SS USMAP dump in {mappings_dir}...")
+
+        while time.monotonic() < deadline:
+            # Check if the process already exited (os.exit(0) from the Lua mod)
+            ret = proc.poll()
+            if ret is not None:
+                logger.info(f"umu-run exited with code {ret} — checking for dump output...")
+                break
+
+            usmap_path = _find_usmap(mappings_dir)
+            if usmap_path:
+                logger.info(f"USMAP dump detected: {usmap_path}")
+                break
+
+            time.sleep(_POLL_INTERVAL)
+        else:
+            # Timeout: kill and raise
+            _terminate_proc(proc)
+            raise TimeoutError(
+                f"USMAP dump did not appear in {mappings_dir} within {_DUMP_TIMEOUT}s. "
+                "Check routeA.log or umu-run output. "
+                "Possible causes: UE4SS failed to load, GenerateMappings() not called, "
+                "or engine init took longer than expected."
+            )
+
+        # Process already exited — do a final scan in case file appeared just before exit
+        if usmap_path is None:
+            usmap_path = _find_usmap(mappings_dir)
+
+        # Make sure the process is gone even if we broke on ret != None before the file appeared
         _terminate_proc(proc)
-        raise TimeoutError(
-            f"USMAP dump did not appear in {mappings_dir} within {_DUMP_TIMEOUT}s. "
-            "Check routeA.log or umu-run output. "
-            "Possible causes: UE4SS failed to load, GenerateMappings() not called, "
-            "or engine init took longer than expected."
-        )
 
-    # Process already exited — do a final scan in case file appeared just before exit
-    if usmap_path is None:
-        usmap_path = _find_usmap(mappings_dir)
+        if usmap_path is None:
+            raise RuntimeError(
+                f"umu-run exited but no .usmap file found in {mappings_dir}. "
+                "UE4SS may have loaded but GenerateMappings() may not have completed. "
+                "Check umu-run output above."
+            )
 
-    # Make sure the process is gone even if we broke on ret != None before the file appeared
-    _terminate_proc(proc)
+        # 6. Copy to output location
+        out_path = Path(options.output_mapper_file)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(usmap_path, out_path)
+        logger.success(f"USMAP written to: {out_path}")
 
-    if usmap_path is None:
-        raise RuntimeError(
-            f"umu-run exited but no .usmap file found in {mappings_dir}. "
-            "UE4SS may have loaded but GenerateMappings() may not have completed. "
-            "Check umu-run output above."
-        )
-
-    # 5. Copy to output location
-    out_path = Path(options.output_mapper_file)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(usmap_path, out_path)
-    logger.success(f"USMAP written to: {out_path}")
-
-    return str(out_path)
+        return str(out_path)
+    finally:
+        # Flush/close the launcher log handle. The launch process itself
+        # (gamescope, which owns the umu-run/Wine child tree) is terminated on
+        # the success, timeout, and error paths above via _terminate_proc(proc).
+        if umu_log is not None:
+            umu_log.close()
 
 
 def _terminate_proc(proc: subprocess.Popen) -> None:
