@@ -153,9 +153,10 @@ distro):
   `HEADLESS=false` it opens the game window on your current display for a few
   seconds.
 
-The exporter's Linux-only dependencies (UE4SS, the Linux Oodle library, and the
-Detex build) are all handled automatically by the dependency step
-(`--should-download-dependencies true`) — you do not install them by hand.
+The exporter's Linux-only dependencies (UE4SS, the Linux Oodle library, the Detex
+build, and the native libSkiaSharp used for PNG texture encoding) are all handled
+automatically by the dependency step (`--should-download-dependencies true`) — you
+do not install them by hand.
 
 ### Custom Proton (WRF-TLS build)
 
