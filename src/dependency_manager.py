@@ -451,13 +451,15 @@ class DependencyManager:
             logger.debug("Cleaned up temporary download directory")
 
 
-def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
+def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: bool = False, release: str = "latest") -> bool:
     """
     Install BatchExport dependency.
-    
+
     Args:
         output_path (str, optional): Path to install to. Defaults to src/batch_export/BatchExport/
         force (bool): Force download even if same version exists
+        release (str): CUE4P-BatchExport release tag to install. "latest" (default) uses the
+            latest stable release (pre-releases skipped); any other value pins that exact tag.
     """
     if output_path is None:
         script_dir = Path(__file__).parent
@@ -469,6 +471,12 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
     plat = get_platform_key()  # e.g. "linux-x64", "windows-x64"
     archive_ext = "zip" if plat.startswith("windows") else "tar.gz"
 
+    # "latest" -> release_tag=None (GitHub /releases/latest, skips pre-releases);
+    # anything else pins that exact tag (including pre-release / test builds).
+    release_tag = None if release in (None, "", "latest") else release
+    if release_tag:
+        logger.info(f"Pinning BatchExport to release tag: {release_tag}")
+
     dm = DependencyManager()
     try:
         result = dm.download_github_release_latest(
@@ -477,7 +485,8 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
             asset_pattern=[f"BatchExport-{plat}.{archive_ext}", "README.md"],
             output_path=output_path,
             executable_name=executable_name("BatchExport"),
-            force=force
+            force=force,
+            release_tag=release_tag,
         )
     finally:
         dm.cleanup_temp_files()
@@ -765,12 +774,14 @@ def install_ue4ss(output_path: Optional[Union[str, Path]] = None, force: bool = 
         dm.cleanup_temp_files()
 
 
-def main(force_download: bool = False) -> bool:
+def main(force_download: bool = False, batch_export_release: str = "latest") -> bool:
     """
     Main function to install all dependencies.
 
     Args:
         force_download (bool): Force download even if same version exists
+        batch_export_release (str): CUE4P-BatchExport release tag to install ("latest" or a
+            specific tag to pin).
     """
     import platform
 
@@ -779,7 +790,7 @@ def main(force_download: bool = False) -> bool:
     try:
         # Install BatchExport
         logger.info("Installing BatchExport...")
-        install_batch_export(force=force_download)
+        install_batch_export(force=force_download, release=batch_export_release)
 
         # Install DepotDownloader
         logger.info("Installing DepotDownloader...")

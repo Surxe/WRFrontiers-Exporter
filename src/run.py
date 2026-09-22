@@ -50,7 +50,10 @@ def run_dependency_manager(options: Options) -> bool:
         logger.info("=" * 60)
         
         logger.info("Running dependency manager to ensure all dependencies are up to date...")
-        result = dependency_main(force_download=options.force_download_dependencies)
+        result = dependency_main(
+            force_download=options.force_download_dependencies,
+            batch_export_release=options.batch_export_release,
+        )
         
         end_time = time.time()
         elapsed_time = end_time - start_time

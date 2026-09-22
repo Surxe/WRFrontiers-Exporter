@@ -231,6 +231,13 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--force-download-dependencies`
   - Depends on: `SHOULD_DOWNLOAD_DEPENDENCIES`
 
+* **BATCH_EXPORT_RELEASE** - CUE4P-BatchExport release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v1.6.2-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.
+  - Example: `"v1.6.2-test.1"`
+  - Default: `"latest"`
+  - Command line: `--batch-export-release`
+  - Depends on: `SHOULD_DOWNLOAD_DEPENDENCIES`
+  - [Releases](https://github.com/Surxe/CUE4P-BatchExport/releases)
+
 
 #### Steam Download
 
