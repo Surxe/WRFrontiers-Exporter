@@ -33,6 +33,17 @@ OPTIONS_SCHEMA = {
         "help": "Re-download dependencies even if they are already present.",
         "depends_on": ["SHOULD_DOWNLOAD_DEPENDENCIES"]
     },
+    "BATCH_EXPORT_RELEASE": {
+        "env": "BATCH_EXPORT_RELEASE",
+        "arg": "--batch-export-release",
+        "type": str,
+        "default": "latest",
+        "section": "Dependencies",
+        "help": "CUE4P-BatchExport release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v1.6.2-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.",
+        "links": {"Releases": "https://github.com/Surxe/CUE4P-BatchExport/releases"},
+        "depends_on": ["SHOULD_DOWNLOAD_DEPENDENCIES"],
+        "example": "v1.6.2-test.1"
+    },
     "SHOULD_DOWNLOAD_STEAM_GAME": {
         "env": "SHOULD_DOWNLOAD_STEAM_GAME",
         "arg": "--should-download-steam-game",
