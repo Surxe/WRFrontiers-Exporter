@@ -136,7 +136,7 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to save the generated mapping file (.usmap) at. Should end in .usmap",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"],
+        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT", "SHOULD_EXPORT_MAPS"],
         "example": Path("C:/WRFrontiersDB/Mappings/2025-09-30.usmap")
     },
     "SHOULD_BATCH_EXPORT": {
@@ -161,9 +161,9 @@ OPTIONS_SCHEMA = {
         "arg": "--output-data-dir",
         "type": Path,
         "default": None,
-        "help": "Path to save the exported assets to.",
+        "help": "Path to save the exported assets to. The map export reads its map list from here.",
         "section": "Batch Export",
-        "depends_on": ["SHOULD_BATCH_EXPORT"],
+        "depends_on": ["SHOULD_BATCH_EXPORT", "SHOULD_EXPORT_MAPS"],
         "example": Path("C:/WRFrontiersDB/ExportedData")
     },
     "SHOULD_EXPORT_TEXTURES": {
@@ -174,6 +174,33 @@ OPTIONS_SCHEMA = {
         "help": "Whether to export textures.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"]
+    },
+    "SHOULD_EXPORT_MAPS": {
+        "env": "SHOULD_EXPORT_MAPS",
+        "arg": "--should-export-maps",
+        "type": bool,
+        "default": False,
+        "help": "Whether to export the released maps with BatchExport's map mode (one scene per map plus the geometry it refers to). Needs a BatchExport release with the map mode (see BATCH_EXPORT_RELEASE). The map list is read from the asset export in OUTPUT_DATA_DIR, so the regular BatchExport must have run first.",
+        "section": "Map Export",
+    },
+    "FORCE_EXPORT_MAPS": {
+        "env": "FORCE_EXPORT_MAPS",
+        "arg": "--force-export-maps",
+        "type": bool,
+        "default": False,
+        "help": "Re-run the map export even if OUTPUT_MAPS_DIR is not empty.",
+        "section": "Map Export",
+        "depends_on": ["SHOULD_EXPORT_MAPS"]
+    },
+    "OUTPUT_MAPS_DIR": {
+        "env": "OUTPUT_MAPS_DIR",
+        "arg": "--output-maps-dir",
+        "type": Path,
+        "default": None,
+        "help": "Path to save the exported maps to (maps/<Map>/ scenes, assets/, config/).",
+        "section": "Map Export",
+        "depends_on": ["SHOULD_EXPORT_MAPS"],
+        "example": Path("C:/WRFrontiersDB/Maps/2025-09-30")
     },
     "WINE_PREFIX": {
         "env": "WINE_PREFIX",
