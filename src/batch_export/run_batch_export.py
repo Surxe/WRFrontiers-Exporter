@@ -3,19 +3,13 @@ import sys
 import os
 import time
 import platform
-import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from optionsconfig import init_options, Options
 from utils import run_process, executable_name
 from loguru import logger
-from batch_export.map_list import map_filters
-
-# Memory cap of the map export on Linux: it peaks at 1-1.5 GB on a large map, and the
-# home-server also hosts VMs, which an uncapped run once pushed into swap.
-MAP_EXPORT_MEMORY_MAX = "2G"
 
 class BatchExporter:
     """
@@ -47,34 +41,18 @@ class BatchExporter:
         self.executable_path = self.batch_export_dir / executable_name("BatchExport")
         
         # Build the command once during initialization
-        self.command = self._common_args() + self._mode_args()
-        
-        # Validate paths
-        self._validate_setup()
-
-    @property
-    def output_dir(self) -> Path:
-        """Where this export writes."""
-        return Path(self.options.output_data_dir)
-
-    def _common_args(self) -> List[str]:
-        """The executable and the arguments every export mode takes: game, pak files, mapper."""
-        return [
+        self.command = [
             str(self.executable_path),
             "--preset", "WarRobotsFrontiers",
             "--pak-files-directory", str(self.options.steam_game_download_dir),
-            "--export-output-path", str(self.output_dir),
+            "--export-output-path", str(self.options.output_data_dir),
             "--mapping-file-path", str(self.mapping_file_path),
             "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false",
+            "--should-export-textures", "false" if not self.options.should_export_textures else "true"
         ]
-
-    def _mode_args(self) -> List[str]:
-        """Arguments of the regular per-asset export."""
-        return ["--should-export-textures", "false" if not self.options.should_export_textures else "true"]
-
-    def _wrap_command(self) -> List[str]:
-        """The command as executed; subclasses may run it inside a wrapper."""
-        return self.command
+        
+        # Validate paths
+        self._validate_setup()
     
     def _validate_setup(self) -> None:
         """Validate that all required paths and files exist."""
@@ -90,9 +68,9 @@ class BatchExporter:
                 "Please ensure steam_game_download_dir is set correctly in your environment."
             )
         
-        # Create output directory if it doesn't exist
-        os.makedirs(self.output_dir, exist_ok=True)
-        logger.info(f"Ensured output directory exists: {self.output_dir}")
+        # Create output data directory if it doesn't exist
+        os.makedirs(self.options.output_data_dir, exist_ok=True)
+        logger.info(f"Ensured output data directory exists: {self.options.output_data_dir}")
         
         # Ensure its parent dir exists, but not the file
         parent_dir = os.path.dirname(self.mapping_file_path)
@@ -116,7 +94,7 @@ class BatchExporter:
         logger.info(f"Using mapping file: {self.mapping_file_path}")
         logger.info(f"Executing BatchExport with command: {str(self)}")
         logger.info(f"PAK files directory: {self.options.steam_game_download_dir}")
-        logger.info(f"Export output path: {self.output_dir}")
+        logger.info(f"Export output path: {self.options.output_data_dir}")
         
         try:
             # On Linux the native decompression libs (Oodle, Detex) live next to
@@ -134,7 +112,7 @@ class BatchExporter:
             # Execute BatchExport using run_process from utils
             # run_process handles logging, timeouts, and error handling internally
             run_process(
-                options=self._wrap_command(),
+                options=self.command,
                 name="BatchExport",
                 timeout=3600,  # 1 hour timeout
                 env=proc_env
@@ -149,36 +127,7 @@ class BatchExporter:
     
     def __str__(self) -> str:
         """Return the command that would be executed as a string."""
-        return ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in self._wrap_command())
-
-
-class MapExporter(BatchExporter):
-    """
-    Runs BatchExport's map mode: one scene per released map, plus the meshes, terrain,
-    splines and navmeshes it refers to (see MAPS.md in CUE4P-BatchExport).
-
-    The map list is read from the asset export (see map_list.py), so the regular
-    BatchExport has to have written OUTPUT_DATA_DIR first.
-    """
-
-    @property
-    def output_dir(self) -> Path:
-        return Path(self.options.output_maps_dir)
-
-    def _mode_args(self) -> List[str]:
-        return [
-            "--export-mode", "Maps",
-            "--map-filters", ",".join(map_filters(str(self.options.output_data_dir))),
-        ]
-
-    def _wrap_command(self) -> List[str]:
-        """On Linux, inside a memory-capped systemd scope when systemd-run is there."""
-        if platform.system().lower() != 'linux' or shutil.which("systemd-run") is None:
-            return self.command
-        return [
-            "systemd-run", "--user", "--scope", "--quiet",
-            "-p", f"MemoryMax={MAP_EXPORT_MEMORY_MAX}", "-p", "MemorySwapMax=0", "--",
-        ] + self.command
+        return ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in self.command)
 
 
 def main(options: Optional[Options] = None, mapping_file_path: Optional[str] = None) -> bool:
@@ -214,34 +163,4 @@ def main(options: Optional[Options] = None, mapping_file_path: Optional[str] = N
         
     except Exception as e:
         logger.error(f"BatchExport failed: {e}")
-        raise
-
-
-def main_maps(options: Optional[Options] = None, mapping_file_path: Optional[str] = None) -> bool:
-    """
-    Run BatchExport's map mode into OUTPUT_MAPS_DIR.
-
-    Args:
-        options (Options, optional): Configuration options
-        mapping_file_path (str): Path to the mapping file (required)
-    """
-    if options is None:
-        raise ValueError("Options must be provided")
-
-    if mapping_file_path is None:
-        raise ValueError("mapping_file_path must be provided")
-
-    if os.path.exists(options.output_maps_dir) and os.listdir(options.output_maps_dir) and not options.force_export_maps:
-        logger.info(f"Map export directory {options.output_maps_dir} already has contents and FORCE_EXPORT_MAPS is False. Skipping map export.")
-        return True
-
-    try:
-        map_exporter = MapExporter(options, mapping_file_path)
-        logger.info(f"Command to execute: {str(map_exporter)}")
-        map_exporter.run()
-        logger.success("Map export completed successfully!")
-        return True
-
-    except Exception as e:
-        logger.error(f"Map export failed: {e}")
         raise
