@@ -76,6 +76,14 @@ def normalize_path(path: str) -> str:
 #           Process           #
 ###############################
 
+class ProcessExitError(Exception):
+    """A process run by run_process exited non-zero. Carries the exit code (negative: killed by that signal)."""
+
+    def __init__(self, name: str, exit_code: int):
+        super().__init__(f'Process {name} exited with code {exit_code}')
+        self.exit_code = exit_code
+
+
 def run_process(options: Union[List[str], str], name: str = '', timeout: int = 60*60, background: bool = False, env: Optional[dict] = None) -> Optional[subprocess.Popen]: #times out after 1hr
     """Runs a subprocess with the given options and logs its output line by line
 
@@ -174,7 +182,7 @@ def run_process(options: Union[List[str], str], name: str = '', timeout: int = 6
     # Wait for process to complete and get exit code
     exit_code = process.wait()
     if exit_code != 0:
-        raise Exception(f'Process {name} exited with code {exit_code}')
+        raise ProcessExitError(name, exit_code)
 
 def wait_for_process_by_name(process_name: str, timeout: int = 60) -> int:
     """Wait for a process with the given name to start

@@ -39,10 +39,10 @@ OPTIONS_SCHEMA = {
         "type": str,
         "default": "latest",
         "section": "Dependencies",
-        "help": "CUE4P-BatchExport release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v1.6.2-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.",
-        "links": {"Releases": "https://github.com/Surxe/CUE4P-BatchExport/releases"},
+        "help": "WRFrontiersDB-CUE4Parse release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v2.0.0-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.",
+        "links": {"Releases": "https://github.com/Surxe/WRFrontiersDB-CUE4Parse/releases"},
         "depends_on": ["SHOULD_DOWNLOAD_DEPENDENCIES"],
-        "example": "v1.6.2-test.1"
+        "example": "v2.0.0-test.1"
     },
     "SHOULD_DOWNLOAD_STEAM_GAME": {
         "env": "SHOULD_DOWNLOAD_STEAM_GAME",
@@ -136,7 +136,7 @@ OPTIONS_SCHEMA = {
         "default": None,
         "help": "Path to save the generated mapping file (.usmap) at. Should end in .usmap",
         "section": "Mapping",
-        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT", "SHOULD_EXPORT_MAPS"],
+        "depends_on": ["SHOULD_GET_MAPPER", "SHOULD_BATCH_EXPORT"],
         "example": Path("C:/WRFrontiersDB/Mappings/2025-09-30.usmap")
     },
     "SHOULD_BATCH_EXPORT": {
@@ -144,7 +144,7 @@ OPTIONS_SCHEMA = {
         "arg": "--should-batch-export",
         "type": bool,
         "default": False,
-        "help": "Whether to run the BatchExport tool to export assets.",
+        "help": "Whether to run the WRFrontiersDB-CUE4Parse export (assets, meshes, maps).",
         "section": "Batch Export",
     },
     "FORCE_EXPORT": {
@@ -152,7 +152,7 @@ OPTIONS_SCHEMA = {
         "arg": "--force-export",
         "type": bool,
         "default": False,
-        "help": "Re-run the BatchExport even if output directory is not empty.",
+        "help": "Re-run the export even if the output directory is not empty.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"]
     },
@@ -161,46 +161,20 @@ OPTIONS_SCHEMA = {
         "arg": "--output-data-dir",
         "type": Path,
         "default": None,
-        "help": "Path to save the exported assets to. The map export reads its map list from here.",
+        "help": "Path to save the exported assets to.",
         "section": "Batch Export",
-        "depends_on": ["SHOULD_BATCH_EXPORT", "SHOULD_EXPORT_MAPS"],
+        "depends_on": ["SHOULD_BATCH_EXPORT"],
         "example": Path("C:/WRFrontiersDB/ExportedData")
     },
-    "SHOULD_EXPORT_TEXTURES": {
-        "env": "SHOULD_EXPORT_TEXTURES",
-        "arg": "--should-export-textures",
-        "type": bool,
-        "default": True,
-        "help": "Whether to export textures.",
+    "BATCH_EXPORT_MEMORY_MAX": {
+        "env": "BATCH_EXPORT_MEMORY_MAX",
+        "arg": "--batch-export-memory-max",
+        "type": str,
+        "default": "1536M",
+        "help": "Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap; elsewhere the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.",
         "section": "Batch Export",
-        "depends_on": ["SHOULD_BATCH_EXPORT"]
-    },
-    "SHOULD_EXPORT_MAPS": {
-        "env": "SHOULD_EXPORT_MAPS",
-        "arg": "--should-export-maps",
-        "type": bool,
-        "default": False,
-        "help": "Whether to export the released maps with BatchExport's map mode (one scene per map plus the geometry it refers to). Needs a BatchExport release with the map mode (see BATCH_EXPORT_RELEASE). The map list is read from the asset export in OUTPUT_DATA_DIR, so the regular BatchExport must have run first.",
-        "section": "Map Export",
-    },
-    "FORCE_EXPORT_MAPS": {
-        "env": "FORCE_EXPORT_MAPS",
-        "arg": "--force-export-maps",
-        "type": bool,
-        "default": False,
-        "help": "Re-run the map export even if OUTPUT_MAPS_DIR is not empty.",
-        "section": "Map Export",
-        "depends_on": ["SHOULD_EXPORT_MAPS"]
-    },
-    "OUTPUT_MAPS_DIR": {
-        "env": "OUTPUT_MAPS_DIR",
-        "arg": "--output-maps-dir",
-        "type": Path,
-        "default": None,
-        "help": "Path to save the exported maps to (maps/<Map>/ scenes, assets/, config/).",
-        "section": "Map Export",
-        "depends_on": ["SHOULD_EXPORT_MAPS"],
-        "example": Path("C:/WRFrontiersDB/Maps/2025-09-30")
+        "depends_on": ["SHOULD_BATCH_EXPORT"],
+        "example": "2G"
     },
     "WINE_PREFIX": {
         "env": "WINE_PREFIX",

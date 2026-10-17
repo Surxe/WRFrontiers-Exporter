@@ -171,6 +171,7 @@ todo.txt
 
 # Downloaded dependencies
 src/batch_export/BatchExport/
+src/batch_export/WRFrontiersDB-CUE4Parse/
 oo2core_9_win64.dll
 Detex.dll
 src/steam/DepotDownloader/

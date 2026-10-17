@@ -5,13 +5,12 @@ A comprehensive data extraction pipeline for War Robots Frontiers that downloads
 
 ## Overview
 
-WRFrontiers-Exporter orchestrates a complete 5-step process to extract and convert War Robots Frontiers game data:
+WRFrontiers-Exporter orchestrates a complete 4-step process to extract and convert War Robots Frontiers game data:
 
 1. **Dependency Manager** - Downloads/updates all required dependencies
 2. **Steam Download/Update** - Downloads/updates game files via DepotDownloader  
 3. **Mapper Generation** - Creates the `.usmap` mapping file by launching the game
-4. **BatchExport** - Converts game assets to JSON format
-5. **Map Export** - Exports the released maps as scenes plus geometry, with BatchExport's map mode
+4. **Export** - WRFrontiersDB-CUE4Parse exports the game assets, meshes and maps
 
 ### Platform support
 
@@ -21,11 +20,10 @@ Windows game with no native Linux build:
 
 | Step | Windows | Linux |
 | --- | --- | --- |
-| 1. Dependencies | BatchExport + DepotDownloader (windows-x64) | + UE4SS, Linux Oodle, Detex (built from source) |
+| 1. Dependencies | WRFrontiersDB-CUE4Parse + DepotDownloader (windows-x64) | + UE4SS; the export release is linux-x64 |
 | 2. Steam download | DepotDownloader (windows-x64) | DepotDownloader (linux-x64, native ELF) |
 | 3. Mapper | Dumper-7 DLL injection into `Shipping.exe` | UE4SS loaded via `dwmapi.dll` proxy, game run under Proton via `umu-run` |
-| 4. BatchExport | `BatchExport.exe` | `BatchExport` (native ELF) |
-| 5. Map export | `BatchExport.exe --export-mode Maps` | same, in a memory-capped `systemd-run` scope when available |
+| 4. Export | `WRFrontiersDB-CUE4Parse.exe` | `WRFrontiersDB-CUE4Parse` (native ELF, natives bundled) |
 
 The exporter auto-detects the OS and selects the correct tools; you use the same
 `src/run.py` command either way. Linux has extra one-time host setup — see
@@ -36,7 +34,7 @@ The exporter auto-detects the OS and selects the correct tools; you use the same
 
 ### 1. Dependency Manager
 - Runs `dependency_manager.py` to download latest release of all dependencies if outdated/missing
-- Downloads BatchExport and DepotDownloader tools from their respective GitHub releases
+- Downloads WRFrontiersDB-CUE4Parse and DepotDownloader from their GitHub releases
 - Automatically checks versions and updates only when necessary
 
 ### 2. Steam Download/Update  
@@ -70,29 +68,17 @@ copies it to `OUTPUT_MAPPER_FILE`. The mechanism is OS-specific:
 - Requires the one-time [Linux setup](#linux-setup) (umu-launcher + custom Proton
   + gamescope)
 
-### 4. BatchExport
-- Uses the mapper file and steam download
-- Exports all `.pak`, `.utoc`, and `.locres` source files to `.json`
-- Saves them in `OUTPUT_DATA_DIR`
-- Converts game assets to human-readable JSON format
-- On Linux, uses a native ELF build of BatchExport plus Linux Oodle and Detex
-  libraries that the dependency step installs automatically
-
-### 5. Map Export
-- Runs BatchExport's map mode (`--export-mode Maps`, see `MAPS.md` in
-  [CUE4P-BatchExport](https://github.com/Surxe/CUE4P-BatchExport)): per map a scene of every
-  actor and component with world transforms, plus the meshes, terrain, splines and navmeshes
-  it refers to. The WRFrontiersDB-Parser cooks these into the Site's 3D maps
-- Needs a BatchExport release with the map mode; until one is stable, pin a pre-release with
-  `BATCH_EXPORT_RELEASE` (the `latest` default skips pre-releases)
-- The map list is the game's own (`src/batch_export/map_list.py`): the maps the matchmaking
-  queues list in `DA_QueueCommonData` (read from `OUTPUT_DATA_DIR`, so step 4 runs first),
-  those named in `ST_MapNames`, and the firing range
-- Saves them in `OUTPUT_MAPS_DIR` (about 1 GB per game version); skipped when that directory
-  already has contents unless `FORCE_EXPORT_MAPS`
-- On Linux it runs in a `systemd-run --user --scope` capped at 2 GB without swap (peak is
-  1-1.5 GB per large map), so it cannot push other services into swap; uncapped where
-  `systemd-run` is not available
+### 4. Export
+- Runs [WRFrontiersDB-CUE4Parse](https://github.com/Surxe/WRFrontiersDB-CUE4Parse) with the
+  mapper file and the steam download
+- One run exports the assets (JSON, UI icons as PNG, localization), the meshes (`.uemodel`), the
+  released maps (into `OUTPUT_DATA_DIR/map-export/`) and the game's `.ini` config
+- Saves everything in `OUTPUT_DATA_DIR`
+- Runs under a memory cap (`BATCH_EXPORT_MEMORY_MAX`); the tool sizes its workers from it
+- Fails the step on any export failure. Exit 1: some files failed (the tool's summary lists
+  them). Exit 3, or a kill: out of memory, so raise the cap
+- The release is self-contained: on Linux it ships its native libraries (Oodle, Detex,
+  libSkiaSharp) next to the executable, so no environment setup is needed
 
 
 ## Installation
@@ -127,8 +113,7 @@ cp .env.example .env
 python src/run.py --help
 ```
 
-On the first real run, enable the dependency step so the tools are downloaded
-(and, on Linux, the native libraries are built/installed):
+On the first real run, enable the dependency step so the tools are downloaded:
 ```bash
 python src/run.py --should-download-dependencies true
 ```
@@ -147,10 +132,6 @@ Install these system packages (names shown for Debian/Ubuntu; adjust for your
 distro):
 
 - **Python 3.8+** with `venv` — `python3 python3-venv`
-- **git** and a **C toolchain** — `git gcc` — the dependency step builds the
-  Linux Detex texture library from source (`hglm/detex`). If `gcc`/`git` are
-  missing the build is skipped with a warning; data/JSON export still works, but
-  texture decoding will not.
 - **umu-launcher** — install from the
   [umu-launcher releases](https://github.com/Open-Wine-Components/umu-launcher/releases)
   (a `.deb` is provided for Debian/Ubuntu; other distros have their own
@@ -171,10 +152,9 @@ distro):
   `HEADLESS=false` it opens the game window on your current display for a few
   seconds.
 
-The exporter's Linux-only dependencies (UE4SS, the Linux Oodle library, the Detex
-build, and the native libSkiaSharp used for PNG texture encoding) are all handled
-automatically by the dependency step (`--should-download-dependencies true`) — you
-do not install them by hand.
+The exporter's Linux-only dependency (UE4SS) is handled by the dependency step
+(`--should-download-dependencies true`). The export tool's release already contains its
+Linux native libraries, so you do not install them by hand.
 
 ### Custom Proton (WRF-TLS build)
 
@@ -249,12 +229,12 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--force-download-dependencies`
   - Depends on: `SHOULD_DOWNLOAD_DEPENDENCIES`
 
-* **BATCH_EXPORT_RELEASE** - CUE4P-BatchExport release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v1.6.2-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.
-  - Example: `"v1.6.2-test.1"`
+* **BATCH_EXPORT_RELEASE** - WRFrontiersDB-CUE4Parse release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v2.0.0-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.
+  - Example: `"v2.0.0-test.1"`
   - Default: `"latest"`
   - Command line: `--batch-export-release`
   - Depends on: `SHOULD_DOWNLOAD_DEPENDENCIES`
-  - [Releases](https://github.com/Surxe/CUE4P-BatchExport/releases)
+  - [Releases](https://github.com/Surxe/WRFrontiersDB-CUE4Parse/releases)
 
 
 #### Steam Download
@@ -312,50 +292,33 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
 
 * **OUTPUT_MAPPER_FILE** - Path to save the generated mapping file (.usmap) at. Should end in .usmap
   - Example: `"C:/WRFrontiersDB/Mappings/2025-09-30.usmap"`
-  - Default: None - required when SHOULD_GET_MAPPER or SHOULD_BATCH_EXPORT or SHOULD_EXPORT_MAPS is True
+  - Default: None - required when SHOULD_GET_MAPPER or SHOULD_BATCH_EXPORT is True
   - Command line: `--output-mapper-file`
-  - Depends on: `SHOULD_GET_MAPPER`, `SHOULD_BATCH_EXPORT`, `SHOULD_EXPORT_MAPS`
+  - Depends on: `SHOULD_GET_MAPPER`, `SHOULD_BATCH_EXPORT`
 
 
 #### Batch Export
 
-* **SHOULD_BATCH_EXPORT** - Whether to run the BatchExport tool to export assets.
+* **SHOULD_BATCH_EXPORT** - Whether to run the WRFrontiersDB-CUE4Parse export (assets, meshes, maps).
   - Default: `"false"`
   - Command line: `--should-batch-export`
 
-* **FORCE_EXPORT** - Re-run the BatchExport even if output directory is not empty.
+* **FORCE_EXPORT** - Re-run the export even if the output directory is not empty.
   - Default: `"false"`
   - Command line: `--force-export`
   - Depends on: `SHOULD_BATCH_EXPORT`
 
-* **OUTPUT_DATA_DIR** - Path to save the exported assets to. The map export reads its map list from here.
+* **OUTPUT_DATA_DIR** - Path to save the exported assets to.
   - Example: `"C:/WRFrontiersDB/ExportedData"`
-  - Default: None - required when SHOULD_BATCH_EXPORT or SHOULD_EXPORT_MAPS is True
+  - Default: None - required when SHOULD_BATCH_EXPORT is True
   - Command line: `--output-data-dir`
-  - Depends on: `SHOULD_BATCH_EXPORT`, `SHOULD_EXPORT_MAPS`
-
-* **SHOULD_EXPORT_TEXTURES** - Whether to export textures.
-  - Default: `"true"`
-  - Command line: `--should-export-textures`
   - Depends on: `SHOULD_BATCH_EXPORT`
 
-
-#### Map Export
-
-* **SHOULD_EXPORT_MAPS** - Whether to export the released maps with BatchExport's map mode (one scene per map plus the geometry it refers to). Needs a BatchExport release with the map mode (see BATCH_EXPORT_RELEASE). The map list is read from the asset export in OUTPUT_DATA_DIR, so the regular BatchExport must have run first.
-  - Default: `"false"`
-  - Command line: `--should-export-maps`
-
-* **FORCE_EXPORT_MAPS** - Re-run the map export even if OUTPUT_MAPS_DIR is not empty.
-  - Default: `"false"`
-  - Command line: `--force-export-maps`
-  - Depends on: `SHOULD_EXPORT_MAPS`
-
-* **OUTPUT_MAPS_DIR** - Path to save the exported maps to (maps/<Map>/ scenes, assets/, config/).
-  - Example: `"C:/WRFrontiersDB/Maps/2025-09-30"`
-  - Default: None - required when SHOULD_EXPORT_MAPS is True
-  - Command line: `--output-maps-dir`
-  - Depends on: `SHOULD_EXPORT_MAPS`
+* **BATCH_EXPORT_MEMORY_MAX** - Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap; elsewhere the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.
+  - Example: `"2G"`
+  - Default: `"1536M"`
+  - Command line: `--batch-export-memory-max`
+  - Depends on: `SHOULD_BATCH_EXPORT`
 
 
 #### Mapping (Linux)
@@ -398,8 +361,6 @@ Windows:
 
 Linux:
 - umu-launcher and the WRF-TLS custom Proton build (see [Linux setup](#linux-setup))
-- `git` + a C toolchain (`gcc`) for the Detex build (optional; only needed for
-  texture decoding)
 - gamescope, for the default headless mapper launch (see [Linux setup](#linux-setup))
 - A working GPU (with `HEADLESS` the mapper runs offscreen with no window; with
   `HEADLESS=false` it briefly opens the game on your current display)
@@ -446,17 +407,12 @@ problems (`<Win64>` = `<STEAM_GAME_DOWNLOAD_DIR>/13_2017027/WRFrontiers/Binaries
    - UE4SS log shows `Engine version is not supported` — the pinned UE4SS
      `experimental-latest` build predates the game's engine version; update it.
 
-2. **BatchExport crashes at "Initializing Oodle/Detex"**
-   - The Linux native libraries are missing — re-run with
+2. **"Required native library is missing" at export start**
+   - The install is incomplete: re-run with
      `--should-download-dependencies true --force-download-dependencies true`
-   - Detex specifically requires `gcc` + `git` at install time to build from
-     source; install them and re-run the dependency step. Without Detex, run with
-     `--should-export-textures false` to skip texture decoding.
 
-3. **`DllNotFoundException` for `oodle-data-shared.dll` / `Detex.dll`**
-   - These are loaded by bare name via `dlopen`; the exporter adds the
-     BatchExport directory to `LD_LIBRARY_PATH` automatically. If you invoke
-     BatchExport manually, set `LD_LIBRARY_PATH` to its directory yourself.
+3. **The export exits 3, or is killed**
+   - It ran out of memory under `BATCH_EXPORT_MEMORY_MAX`. Raise it.
 
 
 ## Contributing

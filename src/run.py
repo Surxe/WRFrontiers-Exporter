@@ -6,8 +6,7 @@ This script orchestrates the complete WRFrontiers data extraction process:
 1. Dependency Manager - Downloads/updates all required dependencies
 2. Steam Download/Update - Downloads/updates game files via DepotDownloader
 3. DLL Injection for Mapper - Creates mapper file via game injection
-4. BatchExport - Converts game assets to JSON format
-5. Map Export - Exports the released maps with BatchExport's map mode
+4. Export - WRFrontiersDB-CUE4Parse exports the assets, meshes and maps
 
 Usage:
     python run.py [options]
@@ -185,7 +184,7 @@ def run_mapper_creation(options: Options) -> Optional[str]:
 
 def run_batch_export(options: Options, mapper_file_path: str) -> bool:
     """
-    Run BatchExport to convert game assets to JSON format.
+    Run the WRFrontiersDB-CUE4Parse export (assets, meshes, maps).
     
     Args:
         options (Options): Configuration options
@@ -195,11 +194,11 @@ def run_batch_export(options: Options, mapper_file_path: str) -> bool:
         bool: True if successful, False otherwise
     """
     start_time = time.time()
-    logger.debug(f"BatchExport timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
+    logger.debug(f"Export timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
     
     try:
         logger.info("=" * 60)
-        logger.info("STEP 4: BATCHEXPORT")
+        logger.info("STEP 4: EXPORT")
         logger.info("=" * 60)
         
         # Import with correct module name (handle hyphen in directory name)
@@ -212,7 +211,7 @@ def run_batch_export(options: Options, mapper_file_path: str) -> bool:
         spec.loader.exec_module(run_batch_export_module)
         batchexport_main = run_batch_export_module.main
         
-        logger.info("Running BatchExport to convert game assets to JSON...")
+        logger.info("Running the WRFrontiersDB-CUE4Parse export...")
         logger.info(f"Using mapper file: {mapper_file_path}")
         logger.info(f"Source PAK files: {options.steam_game_download_dir}")
         logger.info(f"Output JSON directory: {options.output_data_dir}")
@@ -221,78 +220,23 @@ def run_batch_export(options: Options, mapper_file_path: str) -> bool:
         
         end_time = time.time()
         elapsed_time = end_time - start_time
-        logger.debug(f"BatchExport timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
-        logger.debug(f"BatchExport execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+        logger.debug(f"Export timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+        logger.debug(f"Export execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
         
         if result:
-            logger.success("BatchExport completed successfully!")
+            logger.success("Export completed successfully!")
             return True
         else:
-            logger.error("BatchExport failed")
+            logger.error("Export failed")
             return False
         
     except Exception as e:
         end_time = time.time()
         elapsed_time = end_time - start_time
-        logger.debug(f"BatchExport timer ended (with error) at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
-        logger.debug(f"BatchExport execution time before error: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+        logger.debug(f"Export timer ended (with error) at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+        logger.debug(f"Export execution time before error: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
         
-        logger.error(f"BatchExport failed: {e}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return False
-
-
-def run_map_export(options: Options, mapper_file_path: str) -> bool:
-    """
-    Run BatchExport's map mode to export the released maps.
-    
-    Args:
-        options (Options): Configuration options
-        mapper_file_path (str): Path to the mapper file
-        
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    start_time = time.time()
-    logger.debug(f"Map export timer started at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
-    
-    try:
-        logger.info("=" * 60)
-        logger.info("STEP 5: MAP EXPORT")
-        logger.info("=" * 60)
-        
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "run_batch_export", 
-            os.path.join(os.path.dirname(__file__), "batch_export", "run_batch_export.py")
-        )
-        run_batch_export_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(run_batch_export_module)
-        
-        logger.info("Running BatchExport's map mode...")
-        logger.info(f"Map list from: {options.output_data_dir}")
-        logger.info(f"Output maps directory: {options.output_maps_dir}")
-        
-        result = run_batch_export_module.main_maps(options, mapper_file_path)
-        
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        logger.debug(f"Map export timer ended at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
-        logger.debug(f"Map export execution time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-        
-        if result:
-            logger.success("Map export completed successfully!")
-            return True
-        logger.error("Map export failed")
-        return False
-        
-    except Exception as e:
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        logger.debug(f"Map export timer ended (with error) at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
-        logger.debug(f"Map export execution time before error: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-        
-        logger.error(f"Map export failed: {e}")
+        logger.error(f"Export failed: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return False
 
@@ -374,30 +318,18 @@ def main(args: Namespace, log_file: str) -> bool:
         else:
             logger.info("Skipping mapper creation step...")
         
-        # Step 4: BatchExport
+        # Step 4: Export
         if options.should_batch_export:
             # If skipped mapper creation, use the expected output path
             mapper_file_path = options.output_mapper_file
             if not os.path.exists(mapper_file_path):
-                logger.error(f"Mapper file not found at {mapper_file_path}. Cannot skip mapper creation for BatchExport.")
+                logger.error(f"Mapper file not found at {mapper_file_path}. Cannot skip mapper creation for the export.")
                 return False
             if not run_batch_export(options, mapper_file_path):
-                logger.error("BatchExport failed.")
+                logger.error("Export failed.")
                 return False
         else:
             logger.info("Skipping batch export step...")
-        
-        # Step 5: Map Export
-        if options.should_export_maps:
-            mapper_file_path = options.output_mapper_file
-            if not mapper_file_path or not os.path.exists(mapper_file_path):
-                logger.error(f"Mapper file not found at {mapper_file_path}. The map export needs it.")
-                return False
-            if not run_map_export(options, mapper_file_path):
-                logger.error("Map export failed.")
-                return False
-        else:
-            logger.info("Skipping map export step...")
         
         # Success!
         overall_end_time = time.time()
