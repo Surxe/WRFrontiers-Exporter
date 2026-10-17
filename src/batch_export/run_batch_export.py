@@ -7,16 +7,38 @@ from pathlib import Path
 from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import re
+import shutil
+
 from optionsconfig import init_options, Options
-from utils import run_process, executable_name
+from utils import run_process, executable_name, ProcessExitError
+from dependency_manager import BATCH_EXPORT_DIR, BATCH_EXPORT_REPO
 from loguru import logger
+
+# WRFrontiersDB-CUE4Parse exit codes (see its README).
+EXIT_FAILURES = 1
+EXIT_OUT_OF_MEMORY = 3
+# A process the kernel killed with SIGKILL: Python reports -9, a shell 137. Under a memory cap
+# this is the cgroup OOM killer, when native memory runs out before the GC heap limit.
+EXIT_KILLED = (-9, 137)
+
+_SIZE_UNITS = {"": 1, "K": 1024, "M": 1024 ** 2, "G": 1024 ** 3, "T": 1024 ** 4}
+
+
+def parse_memory_size(value: str) -> int:
+    """Bytes in a systemd-style size such as '1536M', '2G' or '805306368'."""
+    match = re.fullmatch(r"\s*(\d+)\s*([KMGT]?)\s*", str(value), re.IGNORECASE)
+    if not match:
+        raise ValueError(f"Invalid memory size: {value!r} (expected e.g. 1536M or 2G)")
+    return int(match.group(1)) * _SIZE_UNITS[match.group(2).upper()]
+
 
 class BatchExporter:
     """
-    A class to handle batch exporting of game assets using the CUE4P BatchExport tool.
-    
-    This class manages the execution of BatchExport.exe with the appropriate options
-    for extracting War Robots Frontiers game data from .pak files to JSON format.
+    Runs the WRFrontiersDB-CUE4Parse export: assets, meshes, maps and config, in one process.
+
+    The tool sizes its workers from its memory budget, so the only setting is the memory cap
+    (BATCH_EXPORT_MEMORY_MAX). Its release is self-contained, so it runs without environment setup.
     """
     
     def __init__(self, options: Optional[Options] = None, mapping_file_path: Optional[str] = None) -> None:
@@ -36,29 +58,51 @@ class BatchExporter:
         self.options = options
         self.mapping_file_path = mapping_file_path
         
-        # Path to BatchExport executable (platform-aware: .exe on Windows, bare on Linux)
-        self.batch_export_dir = Path(__file__).parent / "BatchExport"
-        self.executable_path = self.batch_export_dir / executable_name("BatchExport")
-        
-        # Build the command once during initialization
-        self.command = [
+        # Platform-aware: .exe on Windows, bare on Linux
+        self.batch_export_dir = BATCH_EXPORT_DIR
+        self.executable_path = self.batch_export_dir / executable_name(BATCH_EXPORT_REPO)
+        self.memory_max = self.options.batch_export_memory_max
+        self.memory_max_bytes = parse_memory_size(self.memory_max)
+
+        # Build the command once during initialization. The tool logs progress by default.
+        export_command = [
             str(self.executable_path),
-            "--preset", "WarRobotsFrontiers",
             "--pak-files-directory", str(self.options.steam_game_download_dir),
             "--export-output-path", str(self.options.output_data_dir),
             "--mapping-file-path", str(self.mapping_file_path),
-            "--is-logging-enabled", "true" if self.options.log_level == "DEBUG" else "false",
-            "--should-export-textures", "false" if not self.options.should_export_textures else "true"
         ]
+        self.command, self.env = self._apply_memory_cap(export_command)
         
         # Validate paths
         self._validate_setup()
     
+    def _apply_memory_cap(self, export_command: list) -> tuple:
+        """
+        Caps the export's memory at BATCH_EXPORT_MEMORY_MAX. Returns (command, env).
+
+        On Linux with systemd, the export runs in a transient user scope with MemoryMax set and no
+        swap; .NET then sets its GC heap limit to 75% of it. Elsewhere the GC heap limit is set
+        directly to that 75%, so the tool computes the same budget.
+        """
+        env = os.environ.copy()
+        if platform.system().lower() == 'linux' and shutil.which("systemd-run"):
+            # A system service running as a user with linger has a user manager but no
+            # XDG_RUNTIME_DIR; systemd-run --user needs it to find the user bus.
+            env.setdefault("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+            command = [
+                "systemd-run", "--user", "--scope", "--quiet",
+                "-p", f"MemoryMax={self.memory_max}", "-p", "MemorySwapMax=0", "--",
+            ] + export_command
+            return command, env
+
+        env["DOTNET_GCHeapHardLimit"] = hex(self.memory_max_bytes * 3 // 4)
+        return export_command, env
+
     def _validate_setup(self) -> None:
         """Validate that all required paths and files exist."""
         if not self.executable_path.exists():
             raise FileNotFoundError(
-                f"BatchExport.exe not found at {self.executable_path}. "
+                f"{BATCH_EXPORT_REPO} not found at {self.executable_path}. "
                 "Please use should_download_dependencies first to download it."
             )
         
@@ -90,40 +134,44 @@ class BatchExporter:
         Raises:
             RuntimeError: If BatchExport execution fails
         """
-        logger.info("Starting BatchExport process...")
+        logger.info(f"Starting {BATCH_EXPORT_REPO} export...")
         logger.info(f"Using mapping file: {self.mapping_file_path}")
-        logger.info(f"Executing BatchExport with command: {str(self)}")
+        logger.info(f"Executing with command: {str(self)}")
         logger.info(f"PAK files directory: {self.options.steam_game_download_dir}")
         logger.info(f"Export output path: {self.options.output_data_dir}")
-        
-        try:
-            # On Linux the native decompression libs (Oodle, Detex) live next to
-            # the BatchExport binary and are loaded by bare name via dlopen, which
-            # only searches LD_LIBRARY_PATH + system dirs (not the app dir). Add
-            # the binary's directory to LD_LIBRARY_PATH so they resolve.
-            proc_env = None
-            if platform.system().lower() == 'linux':
-                proc_env = os.environ.copy()
-                existing = proc_env.get('LD_LIBRARY_PATH', '')
-                proc_env['LD_LIBRARY_PATH'] = (
-                    f"{self.batch_export_dir}:{existing}" if existing else str(self.batch_export_dir)
-                )
+        logger.info(f"Memory cap: {self.memory_max}")
 
-            # Execute BatchExport using run_process from utils
-            # run_process handles logging, timeouts, and error handling internally
+        try:
+            # run_process logs the output line by line and raises on a non-zero exit
             run_process(
                 options=self.command,
-                name="BatchExport",
+                name=BATCH_EXPORT_REPO,
                 timeout=3600,  # 1 hour timeout
-                env=proc_env
+                env=self.env
             )
-            
-            logger.success("BatchExport completed successfully!")
-            
-        except Exception as e:
-            error_msg = f"BatchExport execution failed: {e}"
+            logger.success(f"{BATCH_EXPORT_REPO} completed successfully!")
+
+        except ProcessExitError as e:
+            error_msg = self.describe_exit(e.exit_code)
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from e
+        except Exception as e:
+            error_msg = f"{BATCH_EXPORT_REPO} execution failed: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
+
+    def describe_exit(self, exit_code: int) -> str:
+        """What a non-zero exit of the export means, for the log and the raised error."""
+        if exit_code == EXIT_OUT_OF_MEMORY:
+            return (f"{BATCH_EXPORT_REPO} ran out of memory (exit {exit_code}) under the cap "
+                    f"{self.memory_max}. Raise BATCH_EXPORT_MEMORY_MAX.")
+        if exit_code in EXIT_KILLED:
+            return (f"{BATCH_EXPORT_REPO} was killed (exit {exit_code}), most likely by the kernel "
+                    f"for exceeding the memory cap {self.memory_max}. Raise BATCH_EXPORT_MEMORY_MAX.")
+        if exit_code == EXIT_FAILURES:
+            return (f"{BATCH_EXPORT_REPO} finished with export failures (exit {exit_code}). "
+                    "Its summary above lists them.")
+        return f"{BATCH_EXPORT_REPO} failed with exit code {exit_code}."
     
     def __str__(self) -> str:
         """Return the command that would be executed as a string."""
@@ -146,7 +194,7 @@ def main(options: Optional[Options] = None, mapping_file_path: Optional[str] = N
     
     # Check if export directory has contents and force is False
     if os.path.exists(options.output_data_dir) and os.listdir(options.output_data_dir) and not options.force_export:
-        logger.info(f"Export directory {options.output_data_dir} already has contents and FORCE_EXPORT is False. Skipping batch export.")
+        logger.info(f"Export directory {options.output_data_dir} already has contents and FORCE_EXPORT is False. Skipping the export.")
         return True
     
     try:

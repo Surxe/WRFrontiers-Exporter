@@ -39,10 +39,10 @@ OPTIONS_SCHEMA = {
         "type": str,
         "default": "latest",
         "section": "Dependencies",
-        "help": "CUE4P-BatchExport release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v1.6.2-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.",
-        "links": {"Releases": "https://github.com/Surxe/CUE4P-BatchExport/releases"},
+        "help": "WRFrontiersDB-CUE4Parse release tag to install. If 'latest', the latest stable release is used (pre-releases skipped). Set to a specific tag (e.g. 'v2.0.0-test.1') to pin a version; roll back by setting this to 'latest' again and re-running with dependency download enabled.",
+        "links": {"Releases": "https://github.com/Surxe/WRFrontiersDB-CUE4Parse/releases"},
         "depends_on": ["SHOULD_DOWNLOAD_DEPENDENCIES"],
-        "example": "v1.6.2-test.1"
+        "example": "v2.0.0-test.1"
     },
     "SHOULD_DOWNLOAD_STEAM_GAME": {
         "env": "SHOULD_DOWNLOAD_STEAM_GAME",
@@ -144,7 +144,7 @@ OPTIONS_SCHEMA = {
         "arg": "--should-batch-export",
         "type": bool,
         "default": False,
-        "help": "Whether to run the BatchExport tool to export assets.",
+        "help": "Whether to run the WRFrontiersDB-CUE4Parse export (assets, meshes, maps).",
         "section": "Batch Export",
     },
     "FORCE_EXPORT": {
@@ -152,7 +152,7 @@ OPTIONS_SCHEMA = {
         "arg": "--force-export",
         "type": bool,
         "default": False,
-        "help": "Re-run the BatchExport even if output directory is not empty.",
+        "help": "Re-run the export even if the output directory is not empty.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"]
     },
@@ -166,14 +166,15 @@ OPTIONS_SCHEMA = {
         "depends_on": ["SHOULD_BATCH_EXPORT"],
         "example": Path("C:/WRFrontiersDB/ExportedData")
     },
-    "SHOULD_EXPORT_TEXTURES": {
-        "env": "SHOULD_EXPORT_TEXTURES",
-        "arg": "--should-export-textures",
-        "type": bool,
-        "default": True,
-        "help": "Whether to export textures.",
+    "BATCH_EXPORT_MEMORY_MAX": {
+        "env": "BATCH_EXPORT_MEMORY_MAX",
+        "arg": "--batch-export-memory-max",
+        "type": str,
+        "default": "1536M",
+        "help": "Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap; elsewhere the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.",
         "section": "Batch Export",
-        "depends_on": ["SHOULD_BATCH_EXPORT"]
+        "depends_on": ["SHOULD_BATCH_EXPORT"],
+        "example": "2G"
     },
     "WINE_PREFIX": {
         "env": "WINE_PREFIX",

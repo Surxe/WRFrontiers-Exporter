@@ -5,7 +5,6 @@ import time
 import zipfile
 import tarfile
 import shutil
-import subprocess
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
@@ -451,213 +450,50 @@ class DependencyManager:
             logger.debug("Cleaned up temporary download directory")
 
 
+# Where the export tool is installed, and its executable name (".exe" added on Windows).
+BATCH_EXPORT_REPO = "WRFrontiersDB-CUE4Parse"
+BATCH_EXPORT_DIR = Path(__file__).parent / "batch_export" / BATCH_EXPORT_REPO
+
+
 def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: bool = False, release: str = "latest") -> bool:
     """
-    Install BatchExport dependency.
+    Install the WRFrontiersDB-CUE4Parse export tool from its GitHub release.
+
+    The release zip is self-contained on both platforms: the executable plus, on Linux, the
+    native libraries it loads (Oodle, Detex, libSkiaSharp) next to it. Nothing else is set up.
 
     Args:
-        output_path (str, optional): Path to install to. Defaults to src/batch_export/BatchExport/
+        output_path (str, optional): Path to install to. Defaults to BATCH_EXPORT_DIR.
         force (bool): Force download even if same version exists
-        release (str): CUE4P-BatchExport release tag to install. "latest" (default) uses the
-            latest stable release (pre-releases skipped); any other value pins that exact tag.
+        release (str): Release tag to install. "latest" (default) uses the latest stable
+            release (pre-releases skipped); any other value pins that exact tag.
     """
     if output_path is None:
-        script_dir = Path(__file__).parent
-        output_path = script_dir / "batch_export" / "BatchExport"
+        output_path = BATCH_EXPORT_DIR
 
     from utils import get_platform_key, executable_name
 
-    # Platform-aware asset: linux ships a .tar.gz, windows a .zip
     plat = get_platform_key()  # e.g. "linux-x64", "windows-x64"
-    archive_ext = "zip" if plat.startswith("windows") else "tar.gz"
 
     # "latest" -> release_tag=None (GitHub /releases/latest, skips pre-releases);
     # anything else pins that exact tag (including pre-release / test builds).
     release_tag = None if release in (None, "", "latest") else release
     if release_tag:
-        logger.info(f"Pinning BatchExport to release tag: {release_tag}")
+        logger.info(f"Pinning {BATCH_EXPORT_REPO} to release tag: {release_tag}")
 
     dm = DependencyManager()
     try:
-        result = dm.download_github_release_latest(
+        return dm.download_github_release_latest(
             repo_owner="Surxe",
-            repo_name="CUE4P-BatchExport",
-            asset_pattern=[f"BatchExport-{plat}.{archive_ext}", "README.md"],
+            repo_name=BATCH_EXPORT_REPO,
+            asset_pattern=[f"{BATCH_EXPORT_REPO}-{plat}.zip", "README.md"],
             output_path=output_path,
-            executable_name=executable_name("BatchExport"),
+            executable_name=executable_name(BATCH_EXPORT_REPO),
             force=force,
             release_tag=release_tag,
         )
     finally:
         dm.cleanup_temp_files()
-
-    if not result:
-        return False
-
-    # On Linux, CUE4Parse's bundled Oodle/Detex native libs are Windows-only.
-    # Provide Linux equivalents next to the binary so pak/texture decompression works.
-    if plat.startswith("linux"):
-        result = install_batch_export_native_libs(Path(output_path), force=force) and result
-
-    return result
-
-
-# OodleUE release providing the Linux Oodle shared object (mirrors CUE4Parse's
-# own source: FabianFG/CUE4Parse OodleHelper.cs RELEASE_URL + LINUX_ZIP).
-_OODLE_RELEASE = "2026-06-04-1357"
-_OODLE_LINUX_ZIP_URL = f"https://github.com/WorkingRobot/OodleUE/releases/download/{_OODLE_RELEASE}/gcc-x64-release.zip"
-_DETEX_REPO = "https://github.com/hglm/detex.git"
-
-# SkiaSharp native library, used by CUE4Parse-Conversion to ENCODE decoded texture
-# pixels into PNG (Detex only decodes BCn -> raw). The linux-x64 BatchExport single-
-# file bundle ships the managed SkiaSharp.dll but not the native libSkiaSharp.so, so
-# PNG texture export fails without it. We fetch the matching native lib from the
-# NuGet package and drop it next to the binary.
-# The version must match the managed SkiaSharp the build was compiled against —
-# re-derive after a BatchExport update with:
-#   strings BatchExport | grep -oiE 'SkiaSharp/[0-9.]+'
-# The '.NoDependencies' variant is fully self-contained (no fontconfig/freetype),
-# which is all texture export needs.
-_SKIASHARP_VERSION = "3.119.1"
-_SKIASHARP_NUPKG_URL = (
-    "https://www.nuget.org/api/v2/package/"
-    f"SkiaSharp.NativeAssets.Linux.NoDependencies/{_SKIASHARP_VERSION}"
-)
-
-
-def install_batch_export_native_libs(be_dir: Path, force: bool = False) -> bool:
-    """
-    Install the Linux native decompression libraries next to the BatchExport binary.
-
-    CUE4Parse loads Oodle and Detex by bare filename via dlopen, so both must sit
-    on LD_LIBRARY_PATH (run_batch_export adds be_dir). The tool loads them under
-    their Windows names ('oodle-data-shared.dll', 'Detex.dll') but dlopen reads
-    ELF content regardless of extension, so we save Linux .so content under those
-    names.
-
-    - Oodle: downloaded from WorkingRobot/OodleUE (the same release CUE4Parse uses),
-      extracting lib/liboodle-data-shared.so.
-    - Detex: built from source (hglm/detex) — CUE4Parse ships no Linux Detex. Needs
-      git + a C compiler; if unavailable, logs a warning (texture export will fail
-      but data/JSON export still works).
-    - libSkiaSharp: extracted from the SkiaSharp NuGet package — the linux-x64
-      BatchExport bundle omits it, so PNG texture encoding fails without it.
-      Saved as 'libSkiaSharp.so' (the name SkiaSharp's P/Invoke dlopen()s).
-      Best-effort; failure only warns (texture export will fail, data/JSON is
-      unaffected).
-
-    Returns True if Oodle installed (the hard requirement); Detex/SkiaSharp
-    failures only warn.
-    """
-    # Absolute paths: the Detex build runs gcc with cwd set to a temp dir,
-    # so a relative output path would resolve against the wrong directory.
-    be_dir = Path(be_dir).resolve()
-    oodle_dst = be_dir / "oodle-data-shared.dll"   # name the tool dlopen()s
-    detex_dst = be_dir / "Detex.dll"               # name the tool dlopen()s
-    skia_dst = be_dir / "libSkiaSharp.so"          # name SkiaSharp P/Invoke dlopen()s
-
-    # --- Oodle (required) ---
-    if oodle_dst.exists() and not force:
-        logger.info(f"Oodle already present at {oodle_dst}")
-    else:
-        logger.info("Downloading Linux Oodle library from OodleUE...")
-        dm = DependencyManager()
-        try:
-            oodle_tmp = dm.temp_dir / "oodle"
-            oodle_tmp.mkdir(parents=True, exist_ok=True)
-            zip_path = oodle_tmp / "gcc-x64-release.zip"
-            dm._download_file(_OODLE_LINUX_ZIP_URL, zip_path)
-            with zipfile.ZipFile(zip_path, 'r') as zf:
-                # Locate the data-shared .so entry regardless of nesting
-                entry = next((n for n in zf.namelist() if n.endswith("liboodle-data-shared.so")), None)
-                if not entry:
-                    logger.error("liboodle-data-shared.so not found in OodleUE zip")
-                    return False
-                with zf.open(entry) as src, open(oodle_dst, 'wb') as dst:
-                    shutil.copyfileobj(src, dst)
-            os.chmod(oodle_dst, 0o755)
-            logger.info(f"Oodle installed to {oodle_dst}")
-        finally:
-            dm.cleanup_temp_files()
-
-    # --- Detex (best-effort; only needed for texture export) ---
-    if detex_dst.exists() and not force:
-        logger.info(f"Detex already present at {detex_dst}")
-    else:
-        if not shutil.which("gcc") or not shutil.which("git"):
-            logger.warning(
-                "gcc and/or git not available — skipping Detex build. "
-                "Texture export will fail; data/JSON export is unaffected."
-            )
-        else:
-            logger.info("Building Linux Detex library from source...")
-            try:
-                detex_tmp = Path(DependencyManager().temp_dir) / "detex_build"
-                if detex_tmp.exists():
-                    shutil.rmtree(detex_tmp)
-                subprocess.run(["git", "clone", "--depth", "1", _DETEX_REPO, str(detex_tmp)],
-                               check=True, capture_output=True)
-                # The library translation units (the detex Makefile's module list) —
-                # excludes the standalone CLI programs (detex-convert.c, detex-view.c,
-                # validate.c) which carry their own main().
-                modules = [
-                    "bptc-tables", "bits", "clamp", "convert", "dds",
-                    "decompress-bc", "decompress-bptc", "decompress-bptc-float",
-                    "decompress-etc", "decompress-eac", "decompress-rgtc",
-                    "division-tables", "file-info", "half-float", "hdr", "ktx",
-                    "misc", "raw", "texture",
-                ]
-                objs = []
-                for m in modules:
-                    subprocess.run(["gcc", "-c", "-fPIC", "-std=c99",
-                                    "-D_POSIX_C_SOURCE=200809L", "-w", "-I.", "-O2",
-                                    f"{m}.c", "-o", f"{m}.o"],
-                                   check=True, cwd=str(detex_tmp), capture_output=True)
-                    objs.append(f"{m}.o")
-                subprocess.run(["gcc", "-shared", "-o", str(detex_dst)] + objs,
-                               check=True, cwd=str(detex_tmp), capture_output=True)
-                os.chmod(detex_dst, 0o755)
-                logger.info(f"Detex built and installed to {detex_dst}")
-            except subprocess.CalledProcessError as e:
-                logger.warning(
-                    f"Detex build failed ({e}); texture export will fail. "
-                    "Data/JSON export is unaffected."
-                )
-            except Exception as e:
-                logger.warning(f"Detex build error ({e}); texture export will fail.")
-
-    # --- libSkiaSharp (best-effort; only needed for PNG texture encoding) ---
-    if skia_dst.exists() and not force:
-        logger.info(f"libSkiaSharp already present at {skia_dst}")
-    else:
-        logger.info(f"Downloading libSkiaSharp {_SKIASHARP_VERSION} from NuGet...")
-        dm = DependencyManager()
-        try:
-            skia_tmp = dm.temp_dir / "skiasharp"
-            skia_tmp.mkdir(parents=True, exist_ok=True)
-            nupkg_path = skia_tmp / "skiasharp.nupkg"
-            dm._download_file(_SKIASHARP_NUPKG_URL, nupkg_path)
-            with zipfile.ZipFile(nupkg_path) as zf:
-                entry = "runtimes/linux-x64/native/libSkiaSharp.so"
-                if entry not in zf.namelist():
-                    logger.warning(
-                        f"{entry} not found in SkiaSharp nupkg; texture export will "
-                        "fail. Data/JSON export is unaffected."
-                    )
-                else:
-                    with zf.open(entry) as src, open(skia_dst, 'wb') as dst:
-                        shutil.copyfileobj(src, dst)
-                    os.chmod(skia_dst, 0o755)
-                    logger.info(f"libSkiaSharp installed to {skia_dst}")
-        except Exception as e:
-            logger.warning(
-                f"libSkiaSharp install failed ({e}); texture export will fail. "
-                "Data/JSON export is unaffected."
-            )
-        finally:
-            dm.cleanup_temp_files()
-
-    return oodle_dst.exists()
 
 
 def install_depot_downloader(output_path: Optional[Union[str, Path]] = None, force: bool = False) -> bool:
@@ -780,7 +616,7 @@ def main(force_download: bool = False, batch_export_release: str = "latest") -> 
 
     Args:
         force_download (bool): Force download even if same version exists
-        batch_export_release (str): CUE4P-BatchExport release tag to install ("latest" or a
+        batch_export_release (str): WRFrontiersDB-CUE4Parse release tag to install ("latest" or a
             specific tag to pin).
     """
     import platform
