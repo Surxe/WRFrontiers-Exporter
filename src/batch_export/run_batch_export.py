@@ -206,7 +206,7 @@ def main(options: Optional[Options] = None, mapping_file_path: Optional[str] = N
         # Run BatchExport
         batch_exporter.run()
         
-        logger.success("BatchExport process completed successfully!")
+        logger.success(f"{BATCH_EXPORT_REPO} export completed successfully!")
         return True
         
     except Exception as e:
