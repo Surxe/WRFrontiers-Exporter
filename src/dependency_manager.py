@@ -459,8 +459,9 @@ def install_batch_export(output_path: Optional[Union[str, Path]] = None, force: 
     """
     Install the WRFrontiersDB-CUE4Parse export tool from its GitHub release.
 
-    The release zip is self-contained on both platforms: the executable plus, on Linux, the
-    native libraries it loads (Oodle, Detex, libSkiaSharp) next to it. Nothing else is set up.
+    The release zip is self-contained on both platforms: the executable plus the native
+    libraries it loads next to it (Linux: Oodle, Detex, libSkiaSharp; Windows: Oodle).
+    Nothing else is set up.
 
     Args:
         output_path (str, optional): Path to install to. Defaults to BATCH_EXPORT_DIR.

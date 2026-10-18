@@ -173,6 +173,7 @@ todo.txt
 src/batch_export/BatchExport/
 src/batch_export/WRFrontiersDB-CUE4Parse/
 oo2core_9_win64.dll
+oodle-data-shared.dll
 Detex.dll
 src/steam/DepotDownloader/
 src/mapper/ue4ss/
