@@ -23,11 +23,15 @@ Windows game with no native Linux build:
 | 1. Dependencies | WRFrontiersDB-CUE4Parse + DepotDownloader (windows-x64) | + UE4SS; the export release is linux-x64 |
 | 2. Steam download | DepotDownloader (windows-x64) | DepotDownloader (linux-x64, native ELF) |
 | 3. Mapper | Dumper-7 DLL injection into `Shipping.exe` | UE4SS loaded via `dwmapi.dll` proxy, game run under Proton via `umu-run` |
-| 4. Export | `WRFrontiersDB-CUE4Parse.exe` | `WRFrontiersDB-CUE4Parse` (native ELF, natives bundled) |
+| 4. Export | `WRFrontiersDB-CUE4Parse.exe` (Oodle bundled) | `WRFrontiersDB-CUE4Parse` (native ELF, natives bundled) |
 
 The exporter auto-detects the OS and selects the correct tools; you use the same
 `src/run.py` command either way. Linux has extra one-time host setup — see
 [Linux setup](#linux-setup).
+
+> **Windows is not fully tested.** The pipeline is developed and run on Linux. Windows
+> changes (such as the export release now bundling Oodle instead of reading a copy committed
+> to this repo) are written to work but have not been run on a Windows machine.
 
 
 ## Process Details
@@ -77,8 +81,9 @@ copies it to `OUTPUT_MAPPER_FILE`. The mechanism is OS-specific:
 - Runs under a memory cap (`BATCH_EXPORT_MEMORY_MAX`); the tool sizes its workers from it
 - Fails the step on any export failure. Exit 1: some files failed (the tool's summary lists
   them). Exit 3, or a kill: out of memory, so raise the cap
-- The release is self-contained: on Linux it ships its native libraries (Oodle, Detex,
-  libSkiaSharp) next to the executable, so no environment setup is needed
+- The release is self-contained: it ships its native libraries next to the executable (on
+  Linux: Oodle, Detex, libSkiaSharp; on Windows: Oodle), so no environment setup is needed.
+  The Windows build is not fully tested
 
 
 ## Installation
