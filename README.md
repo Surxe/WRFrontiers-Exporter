@@ -79,6 +79,8 @@ copies it to `OUTPUT_MAPPER_FILE`. The mechanism is OS-specific:
   released maps (into `OUTPUT_DATA_DIR/map-export/`) and the game's `.ini` config
 - Saves everything in `OUTPUT_DATA_DIR`
 - Runs under a memory cap (`BATCH_EXPORT_MEMORY_MAX`); the tool sizes its workers from it
+- On Linux the cap is a systemd user scope by default; in a container, which has no user
+  session bus, set `BATCH_EXPORT_MEMORY_SCOPE=none` and let the container's limit be the hard cap
 - Fails the step on any export failure. Exit 1: some files failed (the tool's summary lists
   them). Exit 3, or a kill: out of memory, so raise the cap
 - The release is self-contained: it ships its native libraries next to the executable (on
@@ -319,10 +321,15 @@ Copy `.env.example` to `.env` and configure the following parameters, unless the
   - Command line: `--output-data-dir`
   - Depends on: `SHOULD_BATCH_EXPORT`
 
-* **BATCH_EXPORT_MEMORY_MAX** - Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap; elsewhere the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.
+* **BATCH_EXPORT_MEMORY_MAX** - Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap (see BATCH_EXPORT_MEMORY_SCOPE); otherwise the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.
   - Example: `"2G"`
   - Default: `"1536M"`
   - Command line: `--batch-export-memory-max`
+  - Depends on: `SHOULD_BATCH_EXPORT`
+
+* **BATCH_EXPORT_MEMORY_SCOPE** - How BATCH_EXPORT_MEMORY_MAX is enforced. 'systemd': run the export in a systemd user scope (systemd-run --user --scope) with MemoryMax set and no swap; fails at start if systemd-run is not available. 'none': no scope, only the .NET GC heap limit (75% of the cap); use it in a container, which has no user session bus, and let the container's own memory limit be the hard cap. 'auto': 'systemd' on Linux when systemd-run is on the PATH, otherwise 'none'.
+  - Default: `"auto"`
+  - Command line: `--batch-export-memory-scope`
   - Depends on: `SHOULD_BATCH_EXPORT`
 
 
