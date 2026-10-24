@@ -63,6 +63,35 @@ class TestExportCommand(unittest.TestCase):
             # 75% of 1536 MiB, the same budget .NET derives from a cgroup MemoryMax
             self.assertEqual(exporter.env["DOTNET_GCHeapHardLimit"], hex(1152 * 1024 * 1024))
 
+    def test_scope_none_skips_systemd_even_when_available(self):
+        # A container has systemd-run on the PATH but no user session bus.
+        self.options.batch_export_memory_scope = "none"
+        exporter = self._exporter()
+        self.assertEqual(exporter.command[0], str(exporter.executable_path))
+        self.assertEqual(exporter.env["DOTNET_GCHeapHardLimit"], hex(1152 * 1024 * 1024))
+
+    def test_scope_systemd_uses_the_scope(self):
+        self.options.batch_export_memory_scope = "systemd"
+        exporter = self._exporter()
+        self.assertEqual(exporter.command[:4], ["systemd-run", "--user", "--scope", "--quiet"])
+
+    def test_scope_systemd_fails_without_systemd_run(self):
+        self.options.batch_export_memory_scope = "systemd"
+        for system, systemd_run in [("Windows", None), ("Linux", None)]:
+            with self.assertRaises(RuntimeError):
+                self._exporter(system, systemd_run)
+
+    def test_scope_auto_is_the_default(self):
+        self.options.batch_export_memory_scope = "auto"
+        self.assertEqual(self._exporter().command[0], "systemd-run")
+        exporter = self._exporter("Linux", None)
+        self.assertEqual(exporter.command[0], str(exporter.executable_path))
+
+    def test_unknown_scope_is_rejected(self):
+        self.options.batch_export_memory_scope = "cgroup"
+        with self.assertRaises(ValueError):
+            self._exporter()
+
     def test_exit_codes_are_explained(self):
         exporter = self._exporter()
         self.assertIn("ran out of memory", exporter.describe_exit(3))

@@ -171,10 +171,19 @@ OPTIONS_SCHEMA = {
         "arg": "--batch-export-memory-max",
         "type": str,
         "default": "1536M",
-        "help": "Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap; elsewhere the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.",
+        "help": "Memory cap for the export, as a systemd size (e.g. 1536M, 2G). The export sizes its workers from it. On Linux it runs in a systemd user scope with MemoryMax set and no swap (see BATCH_EXPORT_MEMORY_SCOPE); otherwise the .NET GC heap limit is set to 75% of it. Exit 3 or a kill means the cap is too small.",
         "section": "Batch Export",
         "depends_on": ["SHOULD_BATCH_EXPORT"],
         "example": "2G"
+    },
+    "BATCH_EXPORT_MEMORY_SCOPE": {
+        "env": "BATCH_EXPORT_MEMORY_SCOPE",
+        "arg": "--batch-export-memory-scope",
+        "type": Literal["auto", "systemd", "none"],
+        "default": "auto",
+        "help": "How BATCH_EXPORT_MEMORY_MAX is enforced. 'systemd': run the export in a systemd user scope (systemd-run --user --scope) with MemoryMax set and no swap; fails at start if systemd-run is not available. 'none': no scope, only the .NET GC heap limit (75% of the cap); use it in a container, which has no user session bus, and let the container's own memory limit be the hard cap. 'auto': 'systemd' on Linux when systemd-run is on the PATH, otherwise 'none'.",
+        "section": "Batch Export",
+        "depends_on": ["SHOULD_BATCH_EXPORT"]
     },
     "WINE_PREFIX": {
         "env": "WINE_PREFIX",

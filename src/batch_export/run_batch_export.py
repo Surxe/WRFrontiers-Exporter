@@ -76,16 +76,33 @@ class BatchExporter:
         # Validate paths
         self._validate_setup()
     
+    def _use_systemd_scope(self) -> bool:
+        """Whether to run the export in a systemd user scope (BATCH_EXPORT_MEMORY_SCOPE)."""
+        scope = getattr(self.options, "batch_export_memory_scope", None) or "auto"
+        available = platform.system().lower() == 'linux' and shutil.which("systemd-run")
+        if scope == "none":
+            return False
+        if scope == "systemd":
+            if not available:
+                raise RuntimeError(
+                    "BATCH_EXPORT_MEMORY_SCOPE is 'systemd' but systemd-run is not available. "
+                    "Use 'none' to rely on the .NET GC heap limit (e.g. in a container).")
+            return True
+        if scope == "auto":
+            return bool(available)
+        raise ValueError(f"Unknown BATCH_EXPORT_MEMORY_SCOPE: {scope!r}")
+
     def _apply_memory_cap(self, export_command: list) -> tuple:
         """
         Caps the export's memory at BATCH_EXPORT_MEMORY_MAX. Returns (command, env).
 
-        On Linux with systemd, the export runs in a transient user scope with MemoryMax set and no
-        swap; .NET then sets its GC heap limit to 75% of it. Elsewhere the GC heap limit is set
-        directly to that 75%, so the tool computes the same budget.
+        With a systemd scope (BATCH_EXPORT_MEMORY_SCOPE), the export runs in a transient user
+        scope with MemoryMax set and no swap; .NET then sets its GC heap limit to 75% of it.
+        Without one, the GC heap limit is set directly to that 75%, so the tool computes the same
+        budget, and the hard cap is whatever contains the process (e.g. a container's limit).
         """
         env = os.environ.copy()
-        if platform.system().lower() == 'linux' and shutil.which("systemd-run"):
+        if self._use_systemd_scope():
             # A system service running as a user with linger has a user manager but no
             # XDG_RUNTIME_DIR; systemd-run --user needs it to find the user bus.
             env.setdefault("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
@@ -139,7 +156,8 @@ class BatchExporter:
         logger.info(f"Executing with command: {str(self)}")
         logger.info(f"PAK files directory: {self.options.steam_game_download_dir}")
         logger.info(f"Export output path: {self.options.output_data_dir}")
-        logger.info(f"Memory cap: {self.memory_max}")
+        enforced_by = "systemd user scope" if self.command[0] == "systemd-run" else ".NET GC heap limit only"
+        logger.info(f"Memory cap: {self.memory_max} ({enforced_by})")
 
         try:
             # run_process logs the output line by line and raises on a non-zero exit
