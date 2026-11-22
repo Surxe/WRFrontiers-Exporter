@@ -77,6 +77,9 @@ copies it to `OUTPUT_MAPPER_FILE`. The mechanism is OS-specific:
   mapper file and the steam download
 - One run exports the assets (JSON, UI icons as PNG, localization), the meshes (`.uemodel`), the
   released maps (into `OUTPUT_DATA_DIR/map-export/`) and the game's `.ini` config
+- Blueprint functions keep their Kismet bytecode (`ScriptBytecode` in the JSON), and each Blueprint
+  class is decompiled to pseudo C++ under `OUTPUT_DATA_DIR/blueprint-decompiled/`. This needs a
+  WRFrontiersDB-CUE4Parse release after v2.0.0 (branch `feat/blueprint-script`, not released yet)
 - Saves everything in `OUTPUT_DATA_DIR`
 - Runs under a memory cap (`BATCH_EXPORT_MEMORY_MAX`); the tool sizes its workers from it
 - On Linux the cap is a systemd user scope by default; in a container, which has no user
